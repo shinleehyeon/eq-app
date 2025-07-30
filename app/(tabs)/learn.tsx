@@ -34,12 +34,12 @@ export default function LearnScreen() {
       setIsLoadingMore(true);
     }
 
-    
+
     try {
       const response = await apiClient.getLearningList(
         selectedType,
         pageNum,
-        10, // items per page
+        10,
         accessToken ?? undefined
       );
 
