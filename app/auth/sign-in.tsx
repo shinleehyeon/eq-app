@@ -74,7 +74,7 @@ export default function SignInScreen() {
             email: result.data.user.email,
             name: result.data.user.name,
             avatar: result.data.user.avatar || '',
-          });
+          }, result.data.token);
 
           router.replace('/(tabs)');
         } else {

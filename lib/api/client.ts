@@ -33,14 +33,47 @@ interface SignUpResponse {
   };
 }
 
+interface CreateLearningRequest {
+  title: string;
+  content: string;
+  category: string;
+  difficulty: string;
+  status: string;
+  thumbnail: string;
+  links: string[];
+  viewCount: number;
+  likeCount: number;
+}
+
+interface CreateLearningResponse {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  difficulty: string;
+  status: string;
+  thumbnail: string;
+  links: string[];
+  viewCount: number;
+  likeCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const apiClient = {
-  async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(data),
       });
 
@@ -68,5 +101,9 @@ export const apiClient = {
 
   async signUp(signUpData: SignUpRequest): Promise<ApiResponse<SignUpResponse>> {
     return this.post<SignUpResponse>('/auth/signup', signUpData);
+  },
+
+  async createLearning(learningData: CreateLearningRequest, token?: string): Promise<ApiResponse<CreateLearningResponse>> {
+    return this.post<CreateLearningResponse>('/learning', learningData, token);
   },
 };

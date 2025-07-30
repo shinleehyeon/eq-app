@@ -7,6 +7,7 @@ import { fetchUserDataFromFirebase, updateUser } from '@/utils/firebase-helpers'
 interface UserState {
   user: User | null;
   users: User[];
+  accessToken: string | null;
   isLoading: boolean;
   error: string | null;
   
@@ -23,7 +24,7 @@ interface UserState {
   resetStreak: () => void;
   followUser: (userId: string) => void;
   unfollowUser: (userId: string) => void;
-  setUser: (userData: Partial<User>) => void;
+  setUser: (userData: Partial<User>, accessToken?: string) => void;
   addPlant: (plant: Plant) => void;
 }
 
@@ -32,6 +33,7 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       user: null,
       users: [],
+      accessToken: null,
       isLoading: false,
       error: null,
       
@@ -106,7 +108,7 @@ export const useUserStore = create<UserState>()(
       },
       
       logout: () => {
-        set({ user: null });
+        set({ user: null, accessToken: null });
       },
       
       register: async (name, email, password) => {
@@ -294,7 +296,7 @@ export const useUserStore = create<UserState>()(
         });
       },
       
-      setUser: (userData: Partial<User>) => {
+      setUser: (userData: Partial<User>, accessToken?: string) => {
         const { user } = get();
         if (!user && userData.id && userData.email && userData.name) {
           // Create a new user with default values
@@ -319,10 +321,14 @@ export const useUserStore = create<UserState>()(
               hideAuthoredQuests: false,
             },
           };
-          set({ user: newUser });
+          set({ user: newUser, accessToken: accessToken || null });
         } else if (user) {
           // Update existing user
-          set({ user: { ...user, ...userData } });
+          const updates: Partial<UserState> = { user: { ...user, ...userData } };
+          if (accessToken !== undefined) {
+            updates.accessToken = accessToken;
+          }
+          set(updates);
         }
       },
 

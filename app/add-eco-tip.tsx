@@ -11,15 +11,13 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { storage, database } from '@/config/firebase';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { ref as dbRef, push, set } from 'firebase/database';
 import { useUserStore } from '@/store/user-store';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import Button from '@/components/Button';
 import { Camera, X } from 'lucide-react-native';
 import { View as MotiView } from 'moti';
+import { apiClient } from '@/lib/api/client';
 
 export default function AddEcoTipScreen() {
   const router = useRouter();
@@ -77,34 +75,30 @@ export default function AddEcoTipScreen() {
     setIsSubmitting(true);
 
     try {
-      let imageUrl = '';
-      
-      if (selectedImage) {
-        const response = await fetch(selectedImage.uri);
-        const blob = await response.blob();
-        const filename = `eco-tips/${Date.now()}.jpg`;
-        const fileRef = storageRef(storage, filename);
-        
-        await uploadBytesResumable(fileRef, blob);
-        imageUrl = await getDownloadURL(fileRef);
-      }
-
-      const newTipRef = dbRef(database, 'learn');
-      const newTip = {
-        ...formData,
-        imageUrl,
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        isDeleted: false,
+      // Call API to create learning content
+      const learningData = {
+        title: formData.title,
+        content: formData.content,
+        category: formData.category,
+        difficulty: 'beginner',
+        status: 'published',
+        thumbnail: selectedImage ? 'https://example.com/placeholder.jpg' : '',
+        links: formData.sourceLink ? [formData.sourceLink] : [],
+        viewCount: 0,
+        likeCount: 0
       };
 
-      await push(newTipRef, newTip);
-      
-      Alert.alert(
-        'Success',
-        'Your eco tip has been submitted!',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      const apiResponse = await apiClient.createLearning(learningData);
+
+      if (apiResponse.success) {
+        Alert.alert(
+          'Success',
+          'Your eco tip has been submitted!',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else {
+        Alert.alert('Error', apiResponse.error || 'Failed to submit eco tip. Please try again.');
+      }
     } catch (error) {
       console.error('Error submitting eco tip:', error);
       Alert.alert('Error', 'Failed to submit eco tip. Please try again.');
@@ -125,6 +119,7 @@ export default function AddEcoTipScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
+          
           
           <TextInput
             style={styles.input}
