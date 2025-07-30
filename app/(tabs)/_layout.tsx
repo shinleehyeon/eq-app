@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import colors from '@/constants/colors';
 import { Home, Award, BookOpen, User, Compass } from 'lucide-react-native';
 
@@ -61,8 +62,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    height: 60,
-    paddingBottom: 8,
+    height: 88,
+    paddingBottom: 34,
     paddingTop: 8,
   },
   tabBarLabel: {
