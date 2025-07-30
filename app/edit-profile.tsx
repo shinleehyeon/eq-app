@@ -18,14 +18,12 @@ import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
 import { ArrowLeft, Camera, Image as ImageIcon } from 'lucide-react-native';
-import { storage } from '@/config/firebase';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { updateUserAvatar } from '@/utils/firebase-helpers';
+import { apiClient } from '@/lib/api/client';
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { user, updateProfile } = useUserStore();
+  const { user, updateProfile, accessToken } = useUserStore();
   
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -140,25 +138,29 @@ export default function EditProfileScreen() {
     setIsLoading(true);
     
     try {
-      let avatarUrl = user?.avatar;
-      
-      // Only upload if there's a new avatar
-      if (avatar && avatar !== user?.avatar) {
-        avatarUrl = await uploadImage(avatar);
-        // Update avatar in Firebase Realtime Database
-        await updateUserAvatar(user?.id!, avatarUrl);
+      const profileData = {
+        name: name.trim(),
+        email: email.trim(),
+        profileImage: avatar || user?.avatar || ''
+      };
+
+      const apiResponse = await apiClient.updateProfile(profileData, accessToken || undefined);
+
+      if (apiResponse.success) {
+        await updateProfile({
+          name,
+          email,
+          avatar: avatar || user?.avatar || ''
+        });
+        
+        Alert.alert('Success', 'Profile updated successfully', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } else {
+        Alert.alert('Error', apiResponse.error || 'Failed to update profile');
       }
-      
-      await updateProfile({
-        name,
-        email,
-        avatar: avatarUrl || ''
-      });
-      
-      Alert.alert('Success', 'Profile updated successfully', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
     } catch (error) {
+      console.error('Profile update error:', error);
       Alert.alert('Error', 'Failed to update profile');
     } finally {
       setIsLoading(false);

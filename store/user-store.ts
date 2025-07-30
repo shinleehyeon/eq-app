@@ -154,16 +154,8 @@ export const useUserStore = create<UserState>()(
         const { user } = get();
         if (!user) return;
 
-        try {
-          // Update Firebase Realtime Database
-          await updateUser(user.id, updates);
-          
-          // Update local state
-          set({ user: { ...user, ...updates } });
-        } catch (error) {
-          console.error('Error updating profile:', error);
-          throw error;
-        }
+
+        set({ user: { ...user, ...updates } });
       },
       
       updateSettings: (settings) => {

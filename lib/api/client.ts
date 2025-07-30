@@ -60,6 +60,20 @@ interface CreateLearningResponse {
   updatedAt: string;
 }
 
+interface UpdateProfileRequest {
+  name: string;
+  email: string;
+  profileImage: string;
+}
+
+interface UpdateProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+  profileImage: string;
+  updatedAt: string;
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -95,6 +109,40 @@ export const apiClient = {
     }
   },
 
+  async put<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      console.error('API error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+      };
+    }
+  },
+
   async signIn(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
     return this.post<LoginResponse>('/auth/signin', { email, password });
   },
@@ -105,5 +153,9 @@ export const apiClient = {
 
   async createLearning(learningData: CreateLearningRequest, token?: string): Promise<ApiResponse<CreateLearningResponse>> {
     return this.post<CreateLearningResponse>('/learning', learningData, token);
+  },
+
+  async updateProfile(profileData: UpdateProfileRequest, token?: string): Promise<ApiResponse<UpdateProfileResponse>> {
+    return this.put<UpdateProfileResponse>('/users/profile', profileData, token);
   },
 };
