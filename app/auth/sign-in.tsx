@@ -19,8 +19,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
-import { app } from '@/config/firebase';
+import { apiClient } from '@/lib/api/client';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -67,27 +66,24 @@ export default function SignInScreen() {
       setIsLoading(true);
       setError('');
       try {
-        const auth = getAuth(app);
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const { user } = userCredential;
+        const result = await apiClient.signIn(email, password);
 
-        setUser({
-          id: user.uid,
-          email: user.email || '',
-          name: user.displayName || '',
-          avatar: user.avatar || '',
-        });
+        if (result.success && result.data) {
+          setUser({
+            id: result.data.user.id,
+            email: result.data.user.email,
+            name: result.data.user.name,
+            avatar: result.data.user.avatar || '',
+          });
 
-        router.replace('/(tabs)');
-      } catch (error) {
-        console.error('Login error:', error);
-        const firebaseError = error as { code?: string };
-        if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
+          router.replace('/(tabs)');
+        } else {
           setEmailError('Invalid email or password');
           setPasswordError('Invalid email or password');
-        } else {
-          setError('Failed to sign in. Please try again later.');
         }
+      } catch (error) {
+        console.error('Login error:', error);
+        setError('Failed to sign in. Please try again later.');
       } finally {
         setIsLoading(false);
       }

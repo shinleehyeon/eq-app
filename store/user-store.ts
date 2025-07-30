@@ -23,7 +23,7 @@ interface UserState {
   resetStreak: () => void;
   followUser: (userId: string) => void;
   unfollowUser: (userId: string) => void;
-  setUser: (userData: User) => void;
+  setUser: (userData: Partial<User>) => void;
   addPlant: (plant: Plant) => void;
 }
 
@@ -294,8 +294,36 @@ export const useUserStore = create<UserState>()(
         });
       },
       
-      setUser: (userData: User) => {
-        set({ user: userData });
+      setUser: (userData: Partial<User>) => {
+        const { user } = get();
+        if (!user && userData.id && userData.email && userData.name) {
+          // Create a new user with default values
+          const newUser: User = {
+            id: userData.id,
+            email: userData.email,
+            name: userData.name,
+            avatar: userData.avatar || '',
+            level: userData.level || 1,
+            streak: userData.streak || 0,
+            completedQuests: userData.completedQuests || [],
+            badges: userData.badges || [],
+            plants: userData.plants || [],
+            followers: userData.followers || [],
+            following: userData.following || [],
+            settings: userData.settings || {
+              notifications: true,
+              darkMode: false,
+              language: 'en',
+              privateProfile: false,
+              hideEmail: false,
+              hideAuthoredQuests: false,
+            },
+          };
+          set({ user: newUser });
+        } else if (user) {
+          // Update existing user
+          set({ user: { ...user, ...userData } });
+        }
       },
 
       addPlant: (plant) => {
