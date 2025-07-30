@@ -197,7 +197,7 @@ export default function SignInScreen() {
             </Button>
 
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
               <TouchableOpacity onPress={handleSignUp}>
                 <Text style={styles.signUpLink}>Sign Up</Text>
               </TouchableOpacity>

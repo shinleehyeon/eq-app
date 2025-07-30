@@ -45,7 +45,7 @@ export const apiClient = {
     }
   },
 
-  async signIn(id: string, password: string): Promise<ApiResponse<LoginResponse>> {
-    return this.post<LoginResponse>('/auth/signin', { id, password });
+  async signIn(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
+    return this.post<LoginResponse>('/auth/signin', { email, password });
   },
 };
