@@ -78,10 +78,18 @@ export default function AddEcoTipScreen() {
     setIsSubmitting(true);
 
     try {
+      // Map resourceType to API type format
+      const typeMapping: { [key: string]: string } = {
+        'eco tip': 'eco_tips',
+        'article': 'articles', 
+        'video': 'videos'
+      };
+
       // Call API to create learning content
       const learningData: any = {
         title: formData.title,
         content: formData.content,
+        type: typeMapping[formData.resourceType] || 'eco_tips',
         category: formData.category,
         difficulty: 'beginner',
         status: 'published',

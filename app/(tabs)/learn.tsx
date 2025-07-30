@@ -34,8 +34,8 @@ export default function LearnScreen() {
       setIsLoadingMore(true);
     }
 
+    
     try {
-      console.log('Learn screen - Access token:', accessToken);
       const response = await apiClient.getLearningList(
         selectedType,
         pageNum,
