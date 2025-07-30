@@ -21,7 +21,10 @@ import { apiClient } from '@/lib/api/client';
 
 export default function AddEcoTipScreen() {
   const router = useRouter();
-  const { user } = useUserStore();
+  const userStore = useUserStore();
+  const { user, accessToken } = userStore;
+  console.log('AddEcoTip - Full store state:', userStore);
+  console.log('AddEcoTip - AccessToken:', accessToken);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -76,19 +79,25 @@ export default function AddEcoTipScreen() {
 
     try {
       // Call API to create learning content
-      const learningData = {
+      const learningData: any = {
         title: formData.title,
         content: formData.content,
         category: formData.category,
         difficulty: 'beginner',
         status: 'published',
-        thumbnail: selectedImage ? 'https://example.com/placeholder.jpg' : '',
-        links: formData.sourceLink ? [formData.sourceLink] : [],
+        thumbnail: 'https://example.com/thumbnail.jpg',
         viewCount: 0,
         likeCount: 0
       };
 
-      const apiResponse = await apiClient.createLearning(learningData);
+      // Only add links for video type
+      if (formData.resourceType === 'video' && formData.videoLink) {
+        learningData.links = [formData.videoLink];
+      }
+
+      console.log('Creating learning with data:', learningData);
+      console.log('Access token:', accessToken);
+      const apiResponse = await apiClient.createLearning(learningData, accessToken || undefined);
 
       if (apiResponse.success) {
         Alert.alert(

@@ -154,7 +154,7 @@ export default function SignUpScreen() {
                 darkMode: false,
                 language: 'en'
               }
-            }, response.data.token);
+            }, response.data.accessToken);
 
             router.replace('/(tabs)');
           } catch (firebaseError) {

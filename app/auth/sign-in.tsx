@@ -67,14 +67,17 @@ export default function SignInScreen() {
       setError('');
       try {
         const result = await apiClient.signIn(email, password);
+        console.log('Login API response:', result);
 
         if (result.success && result.data) {
+          console.log('Login successful, full data:', result.data);
+          console.log('AccessToken:', result.data.accessToken);
           setUser({
             id: result.data.user.id,
             email: result.data.user.email,
             name: result.data.user.name,
-            avatar: result.data.user.avatar || '',
-          }, result.data.token);
+            avatar: '',
+          }, result.data.accessToken);
 
           router.replace('/(tabs)');
         } else {

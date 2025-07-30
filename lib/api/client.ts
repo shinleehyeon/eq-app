@@ -7,12 +7,20 @@ interface ApiResponse<T> {
 }
 
 interface LoginResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+  message: string;
   user: {
     id: string;
+    uuid: string;
     email: string;
     name: string;
-    avatar?: string;
+    role: string;
+    level: number | null;
+    experience: number;
+    marathonPoints: number;
+    petFood: number;
+    petToys: number;
   };
 }
 
@@ -24,12 +32,20 @@ interface SignUpRequest {
 }
 
 interface SignUpResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+  message: string;
   user: {
     id: string;
+    uuid: string;
     email: string;
     name: string;
-    avatar?: string;
+    role: string;
+    level: number | null;
+    experience: number;
+    marathonPoints: number;
+    petFood: number;
+    petToys: number;
   };
 }
 
@@ -74,6 +90,29 @@ interface UpdateProfileResponse {
   updatedAt: string;
 }
 
+interface LearningItem {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  difficulty: string;
+  status: string;
+  thumbnail: string;
+  links: string[];
+  viewCount: number;
+  likeCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface GetLearningListResponse {
+  items: LearningItem[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -92,7 +131,9 @@ export const apiClient = {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const result = await response.json();
@@ -126,7 +167,9 @@ export const apiClient = {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const result = await response.json();
@@ -157,5 +200,44 @@ export const apiClient = {
 
   async updateProfile(profileData: UpdateProfileRequest, token?: string): Promise<ApiResponse<UpdateProfileResponse>> {
     return this.put<UpdateProfileResponse>('/users/profile', profileData, token);
+  },
+
+  async get<T>(endpoint: string, token?: string): Promise<ApiResponse<T>> {
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      console.error('API error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+      };
+    }
+  },
+
+  async getLearningList(type: string, page: number = 1, limit: number = 10, token?: string): Promise<ApiResponse<GetLearningListResponse>> {
+    return this.get<GetLearningListResponse>(`/learning/type/${type}?page=${page}&limit=${limit}`, token);
   },
 };
