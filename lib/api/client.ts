@@ -16,6 +16,23 @@ interface LoginResponse {
   };
 }
 
+interface SignUpRequest {
+  id: string;
+  password: string;
+  name: string;
+  email: string;
+}
+
+interface SignUpResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  };
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
     try {
@@ -47,5 +64,9 @@ export const apiClient = {
 
   async signIn(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
     return this.post<LoginResponse>('/auth/signin', { email, password });
+  },
+
+  async signUp(signUpData: SignUpRequest): Promise<ApiResponse<SignUpResponse>> {
+    return this.post<SignUpResponse>('/auth/signup', signUpData);
   },
 };

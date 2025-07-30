@@ -22,6 +22,7 @@ import Button from '@/components/Button';
 import { createUserWithEmailAndPassword, updateProfile, getAuth } from 'firebase/auth';
 import { getDatabase, ref, set } from 'firebase/database';
 import { app } from '@/config/firebase';
+import { apiClient } from '@/lib/api/client';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -100,64 +101,77 @@ export default function SignUpScreen() {
       setIsLoading(true);
       setError('');
       try {
-        const auth = getAuth(app);
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // Update the user's profile with their name
-        await updateProfile(user, { displayName: name });
-
-        // Add user details to Firebase Realtime Database
-        const db = getDatabase(app);
-        await set(ref(db, `users/${user.uid}`), {
-          id: user.uid,
+        const response = await apiClient.signUp({
+          id: email,
+          password,
           name,
           email,
-          avatar: '',
-          level: 1,
-          streak: 0,
-          points: 0,
-          completedQuests: [],
-          badges: [],
-          plants: [],
-          followers: [],
-          following: [],
-          settings: {
-            notifications: true,
-            darkMode: false,
-            language: 'en'
-          },
-          createdAt: new Date().toISOString(),
         });
 
-        // Update local state
-        setUser({
-          id: user.uid,
-          name,
-          email,
-          level: 1,
-          streak: 0,
-          completedQuests: [],
-          badges: [],
-          plants: [],
-          followers: [],
-          following: [],
-          settings: {
-            notifications: true,
-            darkMode: false,
-            language: 'en'
+        if (response.success && response.data) {
+          try {
+            const auth = getAuth(app);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            await updateProfile(user, { displayName: name });
+
+            const db = getDatabase(app);
+            await set(ref(db, `users/${user.uid}`), {
+              id: user.uid,
+              name,
+              email,
+              avatar: '',
+              level: 1,
+              streak: 0,
+              points: 0,
+              completedQuests: [],
+              badges: [],
+              plants: [],
+              followers: [],
+              following: [],
+              settings: {
+                notifications: true,
+                darkMode: false,
+                language: 'en'
+              },
+              createdAt: new Date().toISOString(),
+            });
+
+            setUser({
+              id: user.uid,
+              name,
+              email,
+              level: 1,
+              streak: 0,
+              completedQuests: [],
+              badges: [],
+              plants: [],
+              followers: [],
+              following: [],
+              settings: {
+                notifications: true,
+                darkMode: false,
+                language: 'en'
+              }
+            });
+
+            router.replace('/(tabs)');
+          } catch (firebaseError) {
+            console.error('Firebase signup error:', firebaseError);
+            const error = firebaseError as { code?: string };
+            if (error.code === 'auth/email-already-in-use') {
+              setEmailError('This email is already registered');
+            } else {
+              setError('Failed to create account. Please try again later.');
+            }
           }
-        });
-
-        router.replace('/(tabs)');
-      } catch (error) {
-        console.error('Sign up error:', error);
-        const firebaseError = error as { code?: string };
-        if (firebaseError.code === 'auth/email-already-in-use') {
-          setEmailError('This email is already registered');
         } else {
-          setError('Failed to sign up. Please try again later.');
+          setError(response.error || 'Failed to sign up. Please try again later.');
         }
+      } catch (error) {
+        console.error('API signup error:', error);
+        setError('Failed to sign up. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -245,6 +259,9 @@ export default function SignUpScreen() {
                     if (passwordError) validatePassword(text);
                   }}
                   onBlur={() => validatePassword(password)}
+                  autoComplete="off"
+                  textContentType="none"
+                  passwordRules=""
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
@@ -274,6 +291,9 @@ export default function SignUpScreen() {
                     if (confirmPasswordError) validateConfirmPassword(text);
                   }}
                   onBlur={() => validateConfirmPassword(confirmPassword)}
+                  autoComplete="off"
+                  textContentType="none"
+                  passwordRules=""
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
