@@ -91,7 +91,7 @@ interface UpdateProfileResponse {
 }
 
 interface LearningItem {
-  id: string;
+  uuid: string;
   title: string;
   content: string;
   category: string;
@@ -101,6 +101,9 @@ interface LearningItem {
   links: string[];
   viewCount: number;
   likeCount: number;
+  authorId: string;
+  authorName: string;
+  publishedAt: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -217,6 +220,7 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`API Error - Status: ${response.status}, Response: ${errorText}`);
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 

@@ -90,7 +90,7 @@ export default function AddEcoTipScreen() {
         category: formData.category,
         difficulty: 'beginner',
         status: 'published',
-        thumbnail: 'https://example.com/thumbnail.jpg',
+        thumbnail: selectedImage ? 'https://picsum.photos/300/200' : 'https://picsum.photos/300/200', // Use working placeholder
         viewCount: 0,
         likeCount: 0
       };
@@ -103,6 +103,7 @@ export default function AddEcoTipScreen() {
       const apiResponse = await apiClient.createLearning(learningData, accessToken || undefined);
 
       if (apiResponse.success) {
+        console.log('Learning created successfully:', apiResponse.data);
         Alert.alert(
           'Success',
           'Your eco tip has been submitted!',

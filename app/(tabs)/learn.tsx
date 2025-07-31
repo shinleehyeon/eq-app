@@ -35,24 +35,38 @@ export default function LearnScreen() {
     }
 
 
-    try {
-      const response = await apiClient.getLearningList(
-        selectedType,
-        pageNum,
-        10,
-        accessToken ?? undefined
-      );
+          try {
+        console.log('Fetching learning list for type:', selectedType);
+        const response = await apiClient.getLearningList(
+          selectedType,
+          pageNum,
+          10,
+          accessToken ?? undefined
+        );
+        console.log('Learning list response:', response);
 
-      if (response.success && response.data) {
-        const items = response.data.items || [];
-        if (append) {
-          setLearnContent(prev => [...prev, ...items]);
+        if (response.success && response.data) {
+          const items = response.data.data || [];  // Changed from response.data.items
+          // Transform API data to match EcoTipCard format if needed
+          const transformedItems = items.map((item: any) => {
+            return {
+              ...item,
+              id: item.uuid || item.id,
+              imageUrl: item.thumbnail || 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=EcoTip',
+              source: item.links?.[0] || '',
+              type: item.category || selectedType,
+              userId: item.authorId || 'unknown',
+              isDeleted: 'false'
+            };
+          });
+          if (append) {
+            setLearnContent(prev => [...prev, ...transformedItems]);
+          } else {
+            setLearnContent(transformedItems);
+          }
+          setHasMore(response.data.pagination?.hasNext || false);  // Changed from response.data.hasMore
+          setPage(pageNum);
         } else {
-          setLearnContent(items);
-        }
-        setHasMore(response.data.hasMore || false);
-        setPage(pageNum);
-      } else {
         console.error('Failed to fetch learning content:', response.error);
         if (!append) {
           setLearnContent([]);
@@ -157,7 +171,7 @@ export default function LearnScreen() {
         <FlatList
           data={learnContent}
           renderItem={renderContent}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.uuid || item.id || String(Math.random())}
           contentContainerStyle={styles.listContent}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.1}
