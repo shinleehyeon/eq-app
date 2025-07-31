@@ -33,7 +33,7 @@ export default function AddEcoTipScreen() {
     resourceType: 'eco tip',
     videoLink: '',
   });
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState<any>(null);
 
   const categories = [
     { id: 'water', label: 'Water', color: '#03A9F4' },
@@ -90,7 +90,7 @@ export default function AddEcoTipScreen() {
         category: formData.category,
         difficulty: 'beginner',
         status: 'published',
-        thumbnail: selectedImage ? 'https://picsum.photos/300/200' : 'https://picsum.photos/300/200', // Use working placeholder
+        thumbnail: selectedImage ? selectedImage.uri : 'https://picsum.photos/300/200',
         viewCount: 0,
         likeCount: 0
       };
