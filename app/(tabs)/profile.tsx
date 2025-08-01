@@ -33,7 +33,8 @@ import {
   X,
   BookOpen,
   Heart,
-  MessageCircle
+  MessageCircle,
+  Bone,
 } from 'lucide-react-native';
 import { getDatabase, ref, get } from 'firebase/database';
 import { getAuth, signOut } from 'firebase/auth';
@@ -469,7 +470,7 @@ export default function ProfileScreen() {
             style={styles.statItem}
             onPress={() => setWisdomModalVisible(true)}
           >
-            <BookOpen size={24} color={colors.primary} />
+            <Bone size={24} color={colors.primary} />
             <Text style={styles.statValue}>{wisdomCount}</Text>
             <Text style={styles.statLabel}>Wisdom</Text>
           </TouchableOpacity>
