@@ -470,7 +470,7 @@ export default function ProfileScreen() {
             style={styles.statItem}
             onPress={() => setWisdomModalVisible(true)}
           >
-            <Bone size={24} color={colors.primary} />
+            <BookOpen size={24} color={colors.primary} />
             <Text style={styles.statValue}>{wisdomCount}</Text>
             <Text style={styles.statLabel}>Wisdom</Text>
           </TouchableOpacity>
