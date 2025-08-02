@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import colors from '@/constants/colors';
-import { Home, Award, BookOpen, User, Compass } from 'lucide-react-native';
+import { Home, BookOpen, User, Compass, Route } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -33,10 +33,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="leaderboard"
+        name="marathon"
         options={{
-          title: "Leaderboard",
-          tabBarIcon: ({ color }) => <Award size={24} color={color} />,
+          title: "Marathon",
+          tabBarIcon: ({ color }) => <Route size={24} color={color} />,
         }}
       />
       <Tabs.Screen
