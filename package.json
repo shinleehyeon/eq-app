@@ -34,6 +34,7 @@
     "expo-system-ui": "^5.0.7",
     "expo-web-browser": "^14.1.6",
     "firebase": "^11.7.1",
+    "lottie-react-native": "^7.2.5",
     "lucide-react-native": "^0.533.0",
     "moti": "^0.30.0",
     "react": "19.0.0",
