@@ -29,7 +29,7 @@ export default function MarathonScreen() {
   ];
   
   const handleViewLeaderboard = () => {
-    router.push('/(tabs)/leaderboard');
+    router.push('/screens/leaderboard');
   };
   
   return (
