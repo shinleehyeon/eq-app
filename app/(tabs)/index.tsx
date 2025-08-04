@@ -4,7 +4,6 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  Image, 
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
@@ -18,7 +17,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Sparkles, Info, ShoppingBag, X, Heart, Utensils, Trophy, Star, Zap, Coins } from 'lucide-react-native';
+import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -279,7 +278,7 @@ export default function HomeScreen() {
   const badges = currentUser?.badges || [];
   const completedQuests = currentUser?.completedQuests || [];
   
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
@@ -295,29 +294,36 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.userStatsContainer}>
-          <View style={styles.coinsMainContainer}>
-            <Coins size={32} color={colors.warning} />
-            <Text style={styles.coinsMainText}>{currentUser.coins}</Text>
-            <Text style={styles.coinsLabel}>Coins</Text>
+          <View style={styles.nameCoinsContainer}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.userName}>{currentUser.name}</Text>
+            </View>
+            
+            <View style={styles.coinsContainer}>
+              <Coins size={28} color={colors.warning} />
+              <Text style={styles.coinsText}>500</Text>
+            </View>
           </View>
-          
+        </View>
+
+        <View style={styles.questStatsContainer}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Star size={20} color={colors.primary} />
-              <Text style={styles.statValue}>{currentUser.streak}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
+              <Target size={20} color={colors.primary} />
+              <Text style={styles.statValue}>3</Text>
+              <Text style={styles.statLabel}>Active Quests</Text>
             </View>
             
             <View style={styles.statItem}>
-              <Zap size={20} color={colors.primary} />
-              <Text style={styles.statValue}>{badges.length}</Text>
-              <Text style={styles.statLabel}>Badges</Text>
-            </View>
-            
-            <View style={styles.statItem}>
-              <Sparkles size={20} color={colors.primary} />
+              <CheckCircle size={20} color={colors.success} />
               <Text style={styles.statValue}>{completedQuests.length}</Text>
               <Text style={styles.statLabel}>Completed</Text>
+            </View>
+            
+            <View style={styles.statItem}>
+              <Trophy size={20} color={colors.warning} />
+              <Text style={styles.statValue}>{badges.length}</Text>
+              <Text style={styles.statLabel}>Achievements</Text>
             </View>
           </View>
         </View>
@@ -501,28 +507,50 @@ const styles = StyleSheet.create({
   userStatsContainer: {
     backgroundColor: colors.card,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     marginHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  coinsMainContainer: {
+  questStatsContainer: {
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  nameCoinsContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+  },
+  nameContainer: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 21,
+    color: colors.text,
+    fontWeight: '700',
+  },
+  coinsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  coinsMainText: {
-    ...typography.heading1,
-    fontWeight: 'bold',
+  coinsText: {
+    ...typography.heading3,
     color: colors.warning,
-    fontSize: 36,
+    fontWeight: 'bold',
   },
-  coinsLabel: {
-    ...typography.body,
-    color: colors.textSecondary,
-    fontWeight: '600',
+  questStatsContainer: {
+    backgroundColor: colors.card,
+    padding: 16,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   statsRow: {
     flexDirection: 'row',
