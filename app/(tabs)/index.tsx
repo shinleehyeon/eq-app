@@ -379,7 +379,7 @@ export default function HomeScreen() {
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
                 style={[styles.actionButton, styles.detailButton]}
-                onPress={() => setShowPetModal(true)}
+                onPress={() => router.push('/pet-detail')}
               >
                 <Info size={18} color={colors.white} />
                 <Text style={styles.buttonText}>Pet Details</Text>

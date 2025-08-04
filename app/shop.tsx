@@ -14,7 +14,7 @@ import { Stack, useRouter } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import LottieView from 'lottie-react-native';
-import { X, Star, Coins, ArrowLeft, Check } from 'lucide-react-native';
+import { X, Star, Coins, ArrowLeft, Check, Apple, Gamepad2 } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { useUserStore } from '@/store/user-store';
 
@@ -29,6 +29,18 @@ interface Pet {
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   owned: boolean;
 }
+
+interface ShopItem {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  icon: string;
+  category: 'food' | 'toy';
+  owned: boolean;
+}
+
+type TabType = 'pets' | 'food' | 'toys';
 
 const pets: Pet[] = [
   {
@@ -76,15 +88,111 @@ const rarityColors = {
   legendary: '#FF9800',
 };
 
+const foodItems: ShopItem[] = [
+  {
+    id: 'seaweed',
+    name: 'Fresh Seaweed',
+    price: 50,
+    description: 'Nutritious seaweed that boosts your pet\'s happiness',
+    icon: '🌿',
+    category: 'food',
+    owned: false,
+  },
+  {
+    id: 'organic_seeds',
+    name: 'Organic Seeds',
+    price: 30,
+    description: 'Premium organic seeds for flying pets',
+    icon: '🌰',
+    category: 'food',
+    owned: false,
+  },
+  {
+    id: 'eco_berries',
+    name: 'Eco Berries',
+    price: 75,
+    description: 'Delicious berries that increase pet energy',
+    icon: '🫐',
+    category: 'food',
+    owned: false,
+  },
+  {
+    id: 'bamboo_snack',
+    name: 'Bamboo Snack',
+    price: 40,
+    description: 'Crunchy bamboo treats for gentle giants',
+    icon: '🎋',
+    category: 'food',
+    owned: false,
+  },
+];
+
+const toyItems: ShopItem[] = [
+  {
+    id: 'eco_ball',
+    name: 'Eco Ball',
+    price: 100,
+    description: 'A fun ball made from recycled materials',
+    icon: '⚽',
+    category: 'toy',
+    owned: false,
+  },
+  {
+    id: 'puzzle_tree',
+    name: 'Puzzle Tree',
+    price: 150,
+    description: 'Interactive puzzle that teaches about nature',
+    icon: '🌳',
+    category: 'toy',
+    owned: false,
+  },
+  {
+    id: 'water_wheel',
+    name: 'Water Wheel',
+    price: 120,
+    description: 'Spinning wheel toy for aquatic pets',
+    icon: '🎡',
+    category: 'toy',
+    owned: false,
+  },
+  {
+    id: 'flying_ring',
+    name: 'Flying Ring',
+    price: 80,
+    description: 'Colorful ring toy for flying pets',
+    icon: '🪁',
+    category: 'toy',
+    owned: false,
+  },
+];
+
 export default function ShopScreen() {
   const router = useRouter();
-  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet } = useUserStore();
+  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, user } = useUserStore();
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
-  const [userCoins] = useState(500); // Mock user coins
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('pets');
+  const [userCoins, setUserCoins] = useState(user?.coins || 500);
+  const [ownedPets, setOwnedPets] = useState<string[]>(['duck', 'bird']);
+  const [ownedItems, setOwnedItems] = useState<string[]>([]);
 
-  const handlePurchase = (pet: Pet) => {
-    console.log('Purchasing:', pet.name);
+  const handlePurchasePet = (pet: Pet) => {
+    if (userCoins >= pet.price) {
+      setUserCoins(userCoins - pet.price);
+      setOwnedPets([...ownedPets, pet.id]);
+      setCurrentPet(pet.id); // 구매 후 자동으로 해당 펫 선택
+      console.log('Purchased and selected pet:', pet.name);
+    }
     setSelectedPet(null);
+  };
+
+  const handlePurchaseItem = (item: ShopItem) => {
+    if (userCoins >= item.price) {
+      setUserCoins(userCoins - item.price);
+      setOwnedItems([...ownedItems, item.id]);
+      console.log('Purchased item:', item.name);
+    }
+    setSelectedItem(null);
   };
 
   const handleSelectPet = (petId: string) => {
@@ -92,63 +200,106 @@ export default function ShopScreen() {
     setSelectedPet(null);
   };
 
-  const PetCard = ({ pet }: { pet: Pet }) => (
-    <TouchableOpacity
-      style={[
-        styles.petCard,
-        { borderColor: pet.owned ? rarityColors[pet.rarity] : colors.border },
-        !pet.owned && styles.notOwnedCard
-      ]}
-      onPress={() => setSelectedPet(pet)}
-      activeOpacity={0.8}
-    >
-      {!pet.owned && (
-        <View style={styles.lockOverlay}>
-          <View style={styles.lockBadge}>
-            <Coins size={14} color={colors.white} />
-            <Text style={styles.lockText}>{pet.price}</Text>
+  const PetCard = ({ pet }: { pet: Pet }) => {
+    const isOwned = ownedPets.includes(pet.id);
+    return (
+      <TouchableOpacity
+        style={[
+          styles.petCard,
+          { borderColor: isOwned ? rarityColors[pet.rarity] : colors.border },
+          !isOwned && styles.notOwnedCard
+        ]}
+        onPress={() => setSelectedPet(pet)}
+        activeOpacity={0.8}
+      >
+        {!isOwned && (
+          <View style={styles.lockOverlay}>
+            <View style={styles.lockBadge}>
+              <Coins size={14} color={colors.white} />
+              <Text style={styles.lockText}>{pet.price}</Text>
+            </View>
           </View>
+        )}
+        
+        <View style={[styles.rarityBadge, { 
+          backgroundColor: isOwned ? rarityColors[pet.rarity] : colors.textSecondary 
+        }]}>
+          <Text style={styles.rarityText}>{pet.rarity.toUpperCase()}</Text>
         </View>
-      )}
-      
-      <View style={[styles.rarityBadge, { 
-        backgroundColor: pet.owned ? rarityColors[pet.rarity] : colors.textSecondary 
-      }]}>
-        <Text style={styles.rarityText}>{pet.rarity.toUpperCase()}</Text>
-      </View>
-      
-      <View style={[styles.petAnimationContainer, !pet.owned && styles.grayscale]}>
-        <LottieView
-          source={pet.animationSource}
-          autoPlay
-          loop
-          style={[styles.petAnimation, !pet.owned && { opacity: 0.5 }]}
-        />
-      </View>
-      
-      <Text style={[styles.petName, !pet.owned && styles.notOwnedText]}>{pet.name}</Text>
-      
-      {!pet.owned ? (
-        <View style={styles.priceContainer}>
-          <Coins size={16} color={colors.warning} />
-          <Text style={styles.price}>{pet.price}</Text>
+        
+        <View style={[styles.petAnimationContainer, !isOwned && styles.grayscale]}>
+          <LottieView
+            source={pet.animationSource}
+            autoPlay
+            loop
+            style={[styles.petAnimation, !isOwned && { opacity: 0.5 }]}
+          />
         </View>
-      ) : (
-        <View style={styles.statusContainer}>
-          {currentPetId === pet.id ? (
-            <View style={styles.selectedBadge}>
-              <Check size={12} color={colors.white} />
-              <Text style={styles.ownedText}>SELECTED</Text>
+        
+        <Text style={[styles.petName, !isOwned && styles.notOwnedText]}>{pet.name}</Text>
+        
+        {!isOwned ? (
+          <View style={styles.priceContainer}>
+            <Coins size={16} color={colors.warning} />
+            <Text style={styles.price}>{pet.price}</Text>
+          </View>
+        ) : (
+          <View style={styles.statusContainer}>
+            {currentPetId === pet.id ? (
+              <View style={styles.selectedBadge}>
+                <Check size={12} color={colors.white} />
+                <Text style={styles.ownedText}>SELECTED</Text>
+              </View>
+            ) : (
+              <View style={styles.ownedBadge}>
+                <Text style={styles.ownedText}>OWNED</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const ItemCard = ({ item }: { item: ShopItem }) => {
+    const isOwned = ownedItems.includes(item.id);
+    return (
+      <TouchableOpacity
+        style={[
+          styles.itemCard,
+          !isOwned && styles.notOwnedCard
+        ]}
+        onPress={() => setSelectedItem(item)}
+        activeOpacity={0.8}
+      >
+        {!isOwned && (
+          <View style={styles.lockOverlay}>
+            <View style={styles.lockBadge}>
+              <Coins size={14} color={colors.white} />
+              <Text style={styles.lockText}>{item.price}</Text>
             </View>
-          ) : (
-            <View style={styles.ownedBadge}>
-              <Text style={styles.ownedText}>OWNED</Text>
-            </View>
-          )}
+          </View>
+        )}
+        
+        <View style={[styles.itemIconContainer, !isOwned && styles.grayscale]}>
+          <Text style={[styles.itemIcon, !isOwned && { opacity: 0.5 }]}>{item.icon}</Text>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+        
+        <Text style={[styles.itemName, !isOwned && styles.notOwnedText]}>{item.name}</Text>
+        
+        {!isOwned ? (
+          <View style={styles.priceContainer}>
+            <Coins size={16} color={colors.warning} />
+            <Text style={styles.price}>{item.price}</Text>
+          </View>
+        ) : (
+          <View style={styles.ownedBadge}>
+            <Text style={styles.ownedText}>OWNED</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -171,18 +322,71 @@ export default function ShopScreen() {
         </View>
       </View>
 
+      <View style={styles.tabContainer}>
+        <View style={styles.tabWrapper}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'pets' && styles.activeTab]}
+            onPress={() => setActiveTab('pets')}
+          >
+            <Star size={20} color={activeTab === 'pets' ? colors.white : colors.textSecondary} />
+            <Text style={[styles.tabText, activeTab === 'pets' && styles.activeTabText]}>Pets</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'food' && styles.activeTab]}
+            onPress={() => setActiveTab('food')}
+          >
+            <Apple size={20} color={activeTab === 'food' ? colors.white : colors.textSecondary} />
+            <Text style={[styles.tabText, activeTab === 'food' && styles.activeTabText]}>Food</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'toys' && styles.activeTab]}
+            onPress={() => setActiveTab('toys')}
+          >
+            <Gamepad2 size={20} color={activeTab === 'toys' ? colors.white : colors.textSecondary} />
+            <Text style={[styles.tabText, activeTab === 'toys' && styles.activeTabText]}>Toys</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>Available Pets</Text>
-        
-        <View style={styles.petsGrid}>
-          {pets.map((pet) => (
-            <PetCard key={pet.id} pet={pet} />
-          ))}
-        </View>
+        {activeTab === 'pets' && (
+          <>
+            <Text style={styles.sectionTitle}>Available Pets</Text>
+            <View style={styles.petsGrid}>
+              {pets.map((pet) => (
+                <PetCard key={pet.id} pet={pet} />
+              ))}
+            </View>
+          </>
+        )}
+
+        {activeTab === 'food' && (
+          <>
+            <Text style={styles.sectionTitle}>Pet Food</Text>
+            <View style={styles.itemsGrid}>
+              {foodItems.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+            </View>
+          </>
+        )}
+
+        {activeTab === 'toys' && (
+          <>
+            <Text style={styles.sectionTitle}>Pet Toys</Text>
+            <View style={styles.itemsGrid}>
+              {toyItems.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Pet Detail Modal */}
@@ -224,7 +428,7 @@ export default function ShopScreen() {
                   <Text style={styles.modalPrice}>{selectedPet.price} coins</Text>
                 </View>
 
-                {selectedPet.owned ? (
+                {ownedPets.includes(selectedPet.id) ? (
                   currentPetId === selectedPet.id ? (
                     <View style={styles.selectedContainer}>
                       <Check size={20} color={colors.success} />
@@ -240,8 +444,57 @@ export default function ShopScreen() {
                 ) : (
                   <Button
                     title={userCoins >= selectedPet.price ? 'Purchase' : 'Not enough coins'}
-                    onPress={() => handlePurchase(selectedPet)}
+                    onPress={() => handlePurchasePet(selectedPet)}
                     disabled={userCoins < selectedPet.price}
+                    style={styles.purchaseButton}
+                  />
+                )}
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Item Detail Modal */}
+      <Modal
+        visible={selectedItem !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedItem(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setSelectedItem(null)}
+            >
+              <X size={24} color={colors.text} />
+            </TouchableOpacity>
+
+            {selectedItem && (
+              <>
+                <View style={styles.modalItemIcon}>
+                  <Text style={styles.modalItemIconText}>{selectedItem.icon}</Text>
+                </View>
+
+                <Text style={styles.modalPetName}>{selectedItem.name}</Text>
+                <Text style={styles.modalDescription}>{selectedItem.description}</Text>
+
+                <View style={styles.modalPriceContainer}>
+                  <Coins size={20} color={colors.warning} />
+                  <Text style={styles.modalPrice}>{selectedItem.price} coins</Text>
+                </View>
+
+                {ownedItems.includes(selectedItem.id) ? (
+                  <View style={styles.selectedContainer}>
+                    <Check size={20} color={colors.success} />
+                    <Text style={styles.selectedModalText}>Already Owned</Text>
+                  </View>
+                ) : (
+                  <Button
+                    title={userCoins >= selectedItem.price ? 'Purchase' : 'Not enough coins'}
+                    onPress={() => handlePurchaseItem(selectedItem)}
+                    disabled={userCoins < selectedItem.price}
                     style={styles.purchaseButton}
                   />
                 )}
@@ -511,5 +764,91 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     marginTop: 8,
+  },
+  tabContainer: {
+    backgroundColor: colors.card,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tabWrapper: {
+    flexDirection: 'row',
+    backgroundColor: colors.background,
+    borderRadius: 25,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+  },
+  activeTab: {
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  tabText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: colors.white,
+  },
+  itemsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  itemCard: {
+    width: (screenWidth - 48) / 2,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.border,
+    elevation: 4,
+  },
+  itemIconContainer: {
+    width: '100%',
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  itemIcon: {
+    fontSize: 60,
+  },
+  itemName: {
+    ...typography.body,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalItemIcon: {
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: colors.background,
+    borderRadius: 60,
+  },
+  modalItemIconText: {
+    fontSize: 60,
   },
 });
