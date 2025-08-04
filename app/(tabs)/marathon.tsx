@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
-import { Trophy, ChevronRight, MapPin, Flag, Star, Crown } from 'lucide-react-native';
+import { Trophy, ChevronRight, MapPin, Flag, Star, Crown, Coins } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
@@ -21,7 +21,6 @@ const { width } = Dimensions.get('window');
 export default function MarathonScreen() {
   const { selectedPet } = useUserStore();
   const [currentProgress, setCurrentProgress] = useState(4.2); 
-  const [firstPlaceProgress, setFirstPlaceProgress] = useState(6.8); 
   const totalDistance = 10; 
   
   const handleViewLeaderboard = () => {
@@ -43,15 +42,15 @@ export default function MarathonScreen() {
   };
   
   const milestones = [
-    { id: 1, distance: 0, name: '시작', row: 0, col: 0, icon: Flag },
-    { id: 2, distance: 1.2, name: '첫걸음', row: 0, col: 1, icon: MapPin },
-    { id: 3, distance: 2.5, name: '체크포인트1', row: 0, col: 2, icon: Star },
-    { id: 4, distance: 3.7, name: '중간점1', row: 1, col: 2, icon: MapPin },
-    { id: 5, distance: 5, name: '중간지점', row: 1, col: 1, icon: Star },
-    { id: 6, distance: 6.3, name: '중간점2', row: 1, col: 0, icon: MapPin },
-    { id: 7, distance: 7.5, name: '체크포인트2', row: 2, col: 0, icon: Star },
-    { id: 8, distance: 8.8, name: '막바지', row: 2, col: 1, icon: MapPin },
-    { id: 9, distance: 10, name: '완주!', row: 2, col: 2, icon: Trophy },
+    { id: 1, distance: 0, name: 'Start', row: 0, col: 0, icon: Flag },
+    { id: 2, distance: 1.2, name: 'First Step', row: 0, col: 1, icon: MapPin },
+    { id: 3, distance: 2.5, name: 'Checkpoint 1', row: 0, col: 2, icon: Star },
+    { id: 4, distance: 3.7, name: 'Midpoint 1', row: 1, col: 2, icon: MapPin },
+    { id: 5, distance: 5, name: 'Halfway', row: 1, col: 1, icon: Star },
+    { id: 6, distance: 6.3, name: 'Midpoint 2', row: 1, col: 0, icon: MapPin },
+    { id: 7, distance: 7.5, name: 'Checkpoint 2', row: 2, col: 0, icon: Star },
+    { id: 8, distance: 8.8, name: 'Final Push', row: 2, col: 1, icon: MapPin },
+    { id: 9, distance: 10, name: 'Finish!', row: 2, col: 2, icon: Trophy },
   ];
   
   const getPosition = (row: number, col: number) => {
@@ -109,35 +108,6 @@ export default function MarathonScreen() {
       />
       
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        <View style={styles.headerSection}>
-          
-          <View style={styles.progressCard}>
-            <View style={styles.progressStats}>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressValue}>{currentProgress}km</Text>
-                <Text style={styles.progressLabel}>진행 거리</Text>
-              </View>
-              <View style={styles.progressDivider} />
-              <View style={styles.progressStat}>
-                <Text style={styles.progressValue}>{totalDistance}km</Text>
-                <Text style={styles.progressLabel}>총 거리</Text>
-              </View>
-              <View style={styles.progressDivider} />
-              <View style={styles.progressStat}>
-                <Text style={styles.progressValue}>{((currentProgress / totalDistance) * 100).toFixed(0)}%</Text>
-                <Text style={styles.progressLabel}>완료</Text>
-              </View>
-            </View>
-            
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${(currentProgress / totalDistance) * 100}%` }]} />
-              </View>
-              <Text style={styles.progressText}>{((currentProgress / totalDistance) * 100).toFixed(0)}% 완료</Text>
-            </View>
-          </View>
-        </View>
-        
         <View style={styles.marathonCard}>
           <View style={styles.marathonContainer}>
             <Svg width={width - 80} height={520} style={styles.svgContainer}>
@@ -177,9 +147,6 @@ export default function MarathonScreen() {
                   </View>
                   <Text style={[styles.milestoneText, (completed || isCurrent) && styles.completedText]}>
                     {milestone.name}
-                  </Text>
-                  <Text style={[styles.distanceText, (completed || isCurrent) && styles.completedDistanceText]}>
-                    {milestone.distance}km
                   </Text>
                 </View>
               );
@@ -234,75 +201,55 @@ export default function MarathonScreen() {
               return null;
             })}
             
-            {milestones.map((milestone, index) => {
-              if (index === 0) return null;
-              const prev = milestones[index - 1];
-              
-              if (firstPlaceProgress >= prev.distance && firstPlaceProgress <= milestone.distance) {
-                const t = (firstPlaceProgress - prev.distance) / (milestone.distance - prev.distance);
-                const prevPos = getPosition(prev.row, prev.col);
-                const currPos = getPosition(milestone.row, milestone.col);
-                
-                let x, y;
-                if (index === 3 || index === 6) {
-                  const isRightToLeft = index === 6;
-                  const curveOffset = isRightToLeft ? -100 : 100;
-                  
-                  const cp1x = prevPos.x + curveOffset;
-                  const cp1y = prevPos.y + 40;
-                  const cp2x = currPos.x - curveOffset;
-                  const cp2y = currPos.y - 40;
-                  
-                  x = Math.pow(1-t, 3) * prevPos.x + 
-                      3 * Math.pow(1-t, 2) * t * cp1x + 
-                      3 * (1-t) * Math.pow(t, 2) * cp2x + 
-                      Math.pow(t, 3) * currPos.x;
-                  y = Math.pow(1-t, 3) * prevPos.y + 
-                      3 * Math.pow(1-t, 2) * t * cp1y + 
-                      3 * (1-t) * Math.pow(t, 2) * cp2y + 
-                      Math.pow(t, 3) * currPos.y;
-                } else {
-                  x = prevPos.x + (currPos.x - prevPos.x) * t;
-                  y = prevPos.y + (currPos.y - prevPos.y) * t;
-                }
-                
-                return (
-                  <View
-                    key="first-place-marker"
-                    style={[styles.kingContainer, { position: 'absolute', left: x - 35, top: y - 35 }]}
-                  >
-                    <LottieView
-                      source={require('@/assets/animation/king.json')}
-                      autoPlay
-                      loop
-                      speed={0.5}
-                      style={styles.kingAnimation}
-                    />
-                  </View>
-                );
-              }
-              return null;
-            })}
+          </View>
+        </View>
+        
+        <View style={styles.progressCard}>
+          <View style={styles.progressStats}>
+            <View style={styles.progressStat}>
+              <Text style={styles.progressValue}>{currentProgress}km</Text>
+              <Text style={styles.progressLabel}>Distance</Text>
+            </View>
+            <View style={styles.progressDivider} />
+            <View style={styles.progressStat}>
+              <Text style={styles.progressValue}>{totalDistance}km</Text>
+              <Text style={styles.progressLabel}>Total</Text>
+            </View>
+            <View style={styles.progressDivider} />
+            <View style={styles.progressStat}>
+              <Text style={styles.progressValue}>{((currentProgress / totalDistance) * 100).toFixed(0)}%</Text>
+              <Text style={styles.progressLabel}>Complete</Text>
+            </View>
+          </View>
+          
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${(currentProgress / totalDistance) * 100}%` }]} />
+            </View>
+            <Text style={styles.progressText}>{((currentProgress / totalDistance) * 100).toFixed(0)}% Complete</Text>
           </View>
         </View>
         
         <View style={styles.bottomSection}>
           <TouchableOpacity style={styles.leaderboardButton} onPress={handleViewLeaderboard}>
             <Trophy size={20} color="white" />
-            <Text style={styles.leaderboardButtonText}>순위보기</Text>
+            <Text style={styles.leaderboardButtonText}>Leaderboard</Text>
             <ChevronRight size={16} color="white" />
           </TouchableOpacity>
           
           <View style={styles.rewardCard}>
-            <Text style={styles.rewardTitle}>다음 보상</Text>
+            <Text style={styles.rewardTitle}>Next Reward</Text>
             <View style={styles.rewardContent}>
               <View style={styles.rewardIcon}>
                 <Trophy size={24} color={colors.primary} />
               </View>
               <View style={styles.rewardInfo}>
-                <Text style={styles.rewardName}>친환경 러너</Text>
-                <Text style={styles.rewardDescription}>5km 달성 시 획득</Text>
-                <Text style={styles.rewardPoints}>+500 포인트</Text>
+                <Text style={styles.rewardName}>Eco Runner</Text>
+                <Text style={styles.rewardDescription}>Unlock at 5km</Text>
+                <View style={styles.rewardPointsContainer}>
+                  <Coins size={16} color={colors.warning} />
+                  <Text style={styles.rewardPoints}>500</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -332,24 +279,22 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  headerSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  mainTitle: {
-    ...typography.heading1,
-    color: colors.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 24,
+  marathonCard: {
+    backgroundColor: colors.card,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: colors.border,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   progressCard: {
     backgroundColor: colors.card,
+    marginHorizontal: 20,
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -402,18 +347,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: colors.textSecondary,
   },
-  marathonCard: {
-    backgroundColor: colors.card,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: colors.border,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   marathonContainer: {
     position: 'relative',
     height: 520,
@@ -463,15 +396,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '700',
   },
-  distanceText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: 2,
-    fontSize: 10,
-  },
-  completedDistanceText: {
-    color: colors.textSecondary,
-  },
   currentMarker: {
     position: 'absolute',
     width: 50,
@@ -482,18 +406,6 @@ const styles = StyleSheet.create({
   petAnimation: {
     width: 50,
     height: 50,
-  },
-  kingContainer: {
-    width: 70,
-    height: 70,
-    backgroundColor: 'transparent',
-    borderRadius: 35,
-    overflow: 'hidden',
-  },
-  kingAnimation: {
-    width: 70,
-    height: 70,
-    backgroundColor: 'transparent',
   },
   bottomSection: {
     paddingHorizontal: 20,
@@ -560,9 +472,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 4,
   },
+  rewardPointsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   rewardPoints: {
     ...typography.bodySmall,
-    color: colors.primary,
+    color: colors.warning,
     fontWeight: '600',
   },
 });

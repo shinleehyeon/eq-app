@@ -281,8 +281,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
         options={{
-          title: 'EcoQuest',
-          headerTitleStyle: styles.headerTitle,
+          headerShown: false,
         }} 
       />
       
