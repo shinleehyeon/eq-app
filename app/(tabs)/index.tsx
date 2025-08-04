@@ -18,7 +18,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Leaf, Info, ShoppingBag, X, Heart, Utensils, Trophy } from 'lucide-react-native';
+import { Award, Calendar, Sparkles, Info, ShoppingBag, X, Heart, Utensils, Trophy, Star, Zap } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -309,19 +309,19 @@ export default function HomeScreen() {
           
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Calendar size={20} color={colors.primary} />
+              <Star size={20} color={colors.primary} />
               <Text style={styles.statValue}>{currentUser.streak}</Text>
               <Text style={styles.statLabel}>Day Streak</Text>
             </View>
             
             <View style={styles.statItem}>
-              <Award size={20} color={colors.primary} />
+              <Zap size={20} color={colors.primary} />
               <Text style={styles.statValue}>{badges.length}</Text>
               <Text style={styles.statLabel}>Badges</Text>
             </View>
             
             <View style={styles.statItem}>
-              <Leaf size={20} color={colors.primary} />
+              <Sparkles size={20} color={colors.primary} />
               <Text style={styles.statValue}>{completedQuests.length}</Text>
               <Text style={styles.statLabel}>Completed</Text>
             </View>

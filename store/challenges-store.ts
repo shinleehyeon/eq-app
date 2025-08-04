@@ -23,6 +23,10 @@ interface QuestsState {
   filterByCategory: (category: QuestCategory | 'all') => void;
   setSearchQuery: (query: string) => void;
   getFilteredQuests: (questType: 'daily' | 'open') => Quest[];
+  acceptQuest: (questId: string) => void;
+  completeQuest: (questId: string, proof?: string) => void;
+  selectQuest: (questId: string) => void;
+  unselectQuest: (questId: string) => void;
 }
 
 export const useQuestsStore = create<QuestsState>()(
@@ -148,6 +152,35 @@ export const useQuestsStore = create<QuestsState>()(
           
           return categoryMatch && searchMatch;
         });
+      },
+
+      acceptQuest: (questId: string) => {
+        const { activeQuests } = get();
+        if (!activeQuests.includes(questId)) {
+          set({ activeQuests: [...activeQuests, questId] });
+        }
+      },
+
+      completeQuest: (questId: string, proof?: string) => {
+        const { activeQuests, completedQuests } = get();
+        set({
+          activeQuests: activeQuests.filter(id => id !== questId),
+          completedQuests: [...completedQuests, questId]
+        });
+        // In a real app, you would also send the proof to the backend
+        console.log('Quest completed with proof:', proof);
+      },
+
+      selectQuest: (questId: string) => {
+        const { activeQuests } = get();
+        if (!activeQuests.includes(questId) && activeQuests.length < 5) {
+          set({ activeQuests: [...activeQuests, questId] });
+        }
+      },
+
+      unselectQuest: (questId: string) => {
+        const { activeQuests } = get();
+        set({ activeQuests: activeQuests.filter(id => id !== questId) });
       }
     }),
     {

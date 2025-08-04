@@ -14,7 +14,7 @@ import typography from '@/constants/typography';
 import { useQuestsStore } from '@/store/challenges-store';
 import { useUserStore } from '@/store/user-store';
 import QuestCard from '@/components/QuestCard'; // Use the correct QuestCard component
-import { ChevronRight, Leaf, FileImage } from 'lucide-react-native';
+import { ArrowRight, Sparkles, Globe } from 'lucide-react-native';
 
 // Update the OpenQuest interface 
 interface OpenQuest {
@@ -47,9 +47,10 @@ export default function QuestsScreen() {
     fetchOpenQuests();
   }, []);
   
-  // Get available quests without repeating
-  const recentDailyQuests = dailyQuests.slice(0, Math.min(3, dailyQuests.length));
-  const recentOpenQuests = openQuests.slice(0, Math.min(3, openQuests.length));
+  // Combine all quests and separate selected and available
+  const allQuests = [...dailyQuests, ...openQuests];
+  const selectedQuests = allQuests.filter(quest => activeQuests.includes(quest.id));
+  const availableQuests = allQuests.filter(quest => !activeQuests.includes(quest.id));
   
   return (
     <SafeAreaView style={styles.container}>
@@ -65,54 +66,51 @@ export default function QuestsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Daily Quests Section */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Text style={styles.sectionTitle}>📜Daily Quests</Text>
+        {/* Selected Quests Section */}
+        {selectedQuests.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <Sparkles size={20} color={colors.primary} />
+                <Text style={styles.sectionTitle}>My Selected Quests ({selectedQuests.length}/5)</Text>
+              </View>
             </View>
-            <TouchableOpacity 
-              style={styles.seeAllButton}
-              onPress={() => router.push('/daily-quests')}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-              <ChevronRight size={16} color={colors.primary} />
-            </TouchableOpacity>
+            
+            {selectedQuests.map(quest => (
+              <QuestCard 
+                key={quest.id}
+                challenge={quest}
+                onPress={() => router.push(`/quest-detail?id=${quest.id}`)}
+                showAuthor={false}
+                isActive={true}
+              />
+            ))}
           </View>
-          
-          {recentDailyQuests.map(quest => (
-            <QuestCard 
-              key={quest.id}
-              challenge={quest}
-              onPress={() => router.push(`/quest-detail?id=${quest.id}`)}
-              showAuthor={false} // Don't show author for Daily Quests
-              isActive={activeQuests.includes(quest.id)}
-            />
-          ))}
-        </View>
+        )}
         
-        {/* Open Quests Section */}
+        {/* Available Quests Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
-              <Text style={styles.sectionTitle}>🗺️Open Quests</Text>
+              <Globe size={20} color={colors.primary} />
+              <Text style={styles.sectionTitle}>Available Quests</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.seeAllButton}
-              onPress={() => router.push('/creative')}
-            >
-              <Text style={styles.seeAllText}>Community Hub</Text>
-              <ChevronRight size={16} color={colors.primary} />
-            </TouchableOpacity>
+            <Text style={styles.seeAllText}>
+              Select up to {5 - selectedQuests.length} more quests
+            </Text>
           </View>
 
-          {recentOpenQuests.map(quest => (
+          {availableQuests.map(quest => (
             <QuestCard 
               key={quest.id}
               challenge={quest}
-              isActive={activeQuests.includes(quest.id)}
-              onPress={(quest) => router.push(`/creative-challenge/${quest.id}`)}
-              showAuthor={true} // Show author for Open Quests
+              isActive={false}
+              onPress={() => {
+                if (selectedQuests.length < 5) {
+                  router.push(`/quest-detail?id=${quest.id}`);
+                }
+              }}
+              showAuthor={false}
             />
           ))}
         </View>

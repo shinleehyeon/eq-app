@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { Calendar, Award, Users } from 'lucide-react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { Sparkles, Trophy, Users, Timer, MapPin, Star } from 'lucide-react-native';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { fetchAuthorById } from '@/utils/firebase-helpers';
@@ -12,6 +12,9 @@ interface QuestCardProps {
   isActive: boolean;
   onPress: (quest: any) => void;
   showAuthor?: boolean;
+  onSelect?: (questId: string) => void;
+  onUnselect?: (questId: string) => void;
+  selectable?: boolean;
 }
 
 interface Author {
@@ -74,7 +77,7 @@ export default function QuestCard({ challenge, isActive, onPress, showAuthor = f
   };
 
   const getDifficultyColor = () => {
-    switch (difficulty) {
+    switch (challenge.difficulty) {
       case 'easy':
         return colors.success;
       case 'medium':
@@ -113,81 +116,61 @@ export default function QuestCard({ challenge, isActive, onPress, showAuthor = f
     <TouchableOpacity
       style={[styles.card, isActive && styles.activeCard]}
       onPress={() => onPress(challenge)}
+      activeOpacity={0.9}
     >
-      <Image 
-        source={{ uri: challenge.imageUrl }} 
-        style={styles.image}
-        resizeMode="cover"
-      />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>
-              {getCategoryIcon()} {challenge.category.charAt(0).toUpperCase() + challenge.category.slice(1)}
-            </Text>
+      <View style={styles.cardContent}>
+        {/* Left side - Image */}
+        <View style={styles.imageContainer}>
+          <Image 
+            source={{ uri: challenge.imageUrl }} 
+            style={styles.image}
+            resizeMode="cover"
+          />
+          <View style={styles.categoryIcon}>
+            <Text style={styles.categoryEmoji}>{getCategoryIcon()}</Text>
           </View>
-          {challenge.difficulty && (
-            <View style={styles.categoryBadge}>
-              <Text style={[
-                styles.difficulty,
-                challenge.difficulty === 'easy' && styles.easyDifficulty,
-                challenge.difficulty === 'medium' && styles.mediumDifficulty,
-                challenge.difficulty === 'hard' && styles.hardDifficulty,
-              ]}>
-                {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
-              </Text>
-            </View>
-          )}
         </View>
         
-        <Text style={styles.title}>{challenge.title}</Text>
-        
-        {/* Author information */}
-        {showAuthor && (
-          <View style={styles.authorContainer}>
-            {author?.avatarUrl ? (
-              <Image 
-                source={{ uri: author.avatarUrl }} 
-                style={styles.authorAvatar}
-              />
-            ) : (
-              <View style={styles.authorAvatarPlaceholder}>
-                <Users size={12} color={colors.textSecondary} />
-              </View>
-            )}
-            <Text style={styles.authorName}>
-              {author?.name || challenge.authorName || ""}
-            </Text>
-          </View>
-        )}
-        
-        <Text style={styles.description} numberOfLines={2}>
-          {challenge.description}
-        </Text>
-
-        {showAuthor && (
-        <View style={styles.statFooter}>
-          <View style={styles.statItem}>
-            <Users size={16} color={colors.textSecondary} />
-            <Text style={styles.statText}>{submissionCount} Submissions</Text>
+        {/* Right side - Content */}
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.title} numberOfLines={1}>{challenge.title}</Text>
+            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor() }]}>
+              <Text style={styles.difficultyText}>
+                {challenge.difficulty?.charAt(0).toUpperCase()}
+              </Text>
+            </View>
           </View>
           
-            <View style={styles.infoItem}>
-              <Calendar size={16} color={colors.textSecondary} />
-              <Text style={styles.infoText}>{getDaysLeft()}</Text>
+          <Text style={styles.description} numberOfLines={1}>
+            {challenge.description}
+          </Text>
+          
+          {/* Stats row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Trophy size={12} color={colors.warning} />
+              <Text style={styles.statText}>{challenge.points}</Text>
             </View>
-        </View>)}
-                
-        {challenge.points > 0 && (
-          <View style={styles.pointsContainer}>
-            <Award size={14} color={colors.primary} />
-            <Text style={styles.pointsText}>{challenge.points} points</Text>
+            
+            <View style={styles.statItem}>
+              <Timer size={12} color={colors.info} />
+              <Text style={styles.statText}>{challenge.duration || 30}m</Text>
+            </View>
+            
+            {showAuthor && author && (
+              <View style={styles.statItem}>
+                <Users size={12} color={colors.textSecondary} />
+                <Text style={styles.statText}>{author.name}</Text>
+              </View>
+            )}
           </View>
-        )}
+        </View>
         
+        {/* Active badge */}
         {isActive && (
-          <View style={styles.activeLabel}>
-            <Text style={styles.activeLabelText}>In Progress</Text>
+          <View style={styles.activeBadge}>
+            <View style={styles.activeDot} />
           </View>
         )}
       </View>
@@ -199,117 +182,70 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   activeCard: {
     borderColor: colors.primary,
   },
+  cardContent: {
+    flexDirection: 'row',
+    padding: 12,
+    alignItems: 'center',
+  },
+  imageContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
   image: {
-    width: '100%',
-    height: 160,
+    width: 60,
+    height: 60,
+    borderRadius: 8,
     backgroundColor: colors.border,
   },
   content: {
-    padding: 16,
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  categoryContainer: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  categoryBadge: {
-    backgroundColor: colors.background,
-    paddingHorizontal: 10,
-    paddingTop: 4,
-    borderRadius: 12,
-  },
-  categoryText: {
-    ...typography.caption,
-    fontWeight: '600',
-  },
-  category: {
-    ...typography.caption,
-    color: colors.primary,
-    backgroundColor: colors.primaryLight + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginRight: 8,
-  },
-  difficulty: {
-    ...typography.caption,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  easyDifficulty: {
-    color: '#4CAF50',
-  },
-  mediumDifficulty: {
-    color: '#FF9800',
-  },
-  hardDifficulty: {
-    color: '#F44336',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   title: {
-    ...typography.heading4,
-    marginBottom: 8,
+    ...typography.body,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
   },
-  authorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  authorAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    marginRight: 6,
-  },
-  authorAvatarPlaceholder: {
+  difficultyBadge: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
   },
-  authorName: {
-    ...typography.body,
-    color: colors.textSecondary,
+  difficultyText: {
+    ...typography.caption,
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 10,
   },
   description: {
-    ...typography.body,
-    marginBottom: 12,
-  },
-  statFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  infoText: {
     ...typography.caption,
     color: colors.textSecondary,
+    marginBottom: 8,
   },
-  statsContainer: {
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 12,
   },
   statItem: {
     flexDirection: 'row',
@@ -319,29 +255,33 @@ const styles = StyleSheet.create({
   statText: {
     ...typography.caption,
     color: colors.textSecondary,
+    fontSize: 11,
   },
-  pointsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  pointsText: {
-    ...typography.bodySmall,
-    color: colors.primary,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  activeLabel: {
+  categoryIcon: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  activeLabelText: {
-    ...typography.caption,
-    color: colors.background,
-    fontWeight: '600',
+  categoryEmoji: {
+    fontSize: 10,
+  },
+  activeBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
   },
 });

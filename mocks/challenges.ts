@@ -16,9 +16,16 @@ const challenges: Challenge[] = [
       'Compost food scraps',
       'Refuse single-use items'
     ],
-    impact: 'Reduces landfill waste by approximately 2kg per person',
+    requirements: [
+      'Access to reusable containers and bags',
+      'Ability to compost or access to composting facility',
+      'Commitment to refuse single-use items for 7 days'
+    ],
+    tips: 'Start by auditing your current waste. Keep a "refuse" journal to track items you declined. Find local zero-waste stores or farmers markets for package-free shopping.',
+    impact: 'Reduces landfill waste by approximately 2kg per person and saves up to 5kg of CO2 emissions',
     imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b',
     completedBy: 342,
+    participants: 28,
     isCollaborative: false
   },
   {
@@ -35,9 +42,16 @@ const challenges: Challenge[] = [
       'Prepare and enjoy plant-based meals',
       'Share your favorite recipe with friends'
     ],
-    impact: 'Saves approximately 4kg of CO2 emissions per day compared to meat-based meals',
+    requirements: [
+      'Willingness to try new recipes',
+      'Access to plant-based ingredients',
+      'Basic cooking skills or access to plant-based restaurants'
+    ],
+    tips: 'Start with familiar dishes and make them plant-based. Try batch cooking on Sunday. Explore international cuisines that are naturally plant-based like Indian, Mediterranean, or Thai.',
+    impact: 'Saves approximately 4kg of CO2 emissions per day compared to meat-based meals, conserves 4,000 liters of water',
     imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
     completedBy: 567,
+    participants: 45,
     isCollaborative: false
   },
   {
