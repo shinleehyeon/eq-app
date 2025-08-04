@@ -308,7 +308,7 @@ export default function HomeScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Target size={20} color={colors.primary} />
-              <Text style={styles.statValue}>3</Text>
+              <Text style={styles.statValue}>2</Text>
               <Text style={styles.statLabel}>Active Quests</Text>
             </View>
             
