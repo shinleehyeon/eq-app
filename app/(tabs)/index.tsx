@@ -9,7 +9,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Dimensions,
-  Animated
+  Animated,
+  Modal
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useRouter } from 'expo-router';
@@ -17,7 +18,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Leaf, Info, ShoppingBag } from 'lucide-react-native';
+import { Award, Calendar, Leaf, Info, ShoppingBag, X, Heart, Utensils, Trophy } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -143,8 +144,22 @@ export default function HomeScreen() {
   const { user, initializeUser } = useUserStore();
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
+  const [showPetModal, setShowPetModal] = useState(false);
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef(null);
+  
+  // Mock pet data
+  const currentPet = {
+    name: 'Ocean Duck',
+    level: 5,
+    experience: 60,
+    happiness: 85,
+    hunger: 30,
+    abilities: ['Water Conservation', 'Ocean Cleanup'],
+    personality: 'Playful and energetic',
+    favoriteFood: 'Seaweed Snacks',
+    birthdate: '2024-01-15',
+  };
   
   useEffect(() => {
     const ensureUserInitialization = async () => {
@@ -299,7 +314,7 @@ export default function HomeScreen() {
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
                 style={[styles.actionButton, styles.detailButton]}
-                onPress={() => console.log('Pet detail')}
+                onPress={() => setShowPetModal(true)}
               >
                 <Info size={18} color={colors.white} />
                 <Text style={styles.buttonText}>Pet Details</Text>
@@ -316,6 +331,86 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+      
+      {/* Pet Details Modal */}
+      <Modal
+        visible={showPetModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPetModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowPetModal(false)}
+            >
+              <X size={24} color={colors.text} />
+            </TouchableOpacity>
+            
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Pet Details</Text>
+            </View>
+            
+            <View style={styles.modalPetContainer}>
+              <LottieView
+                source={require('@/assets/animation/duck.json')}
+                autoPlay
+                loop
+                style={styles.modalPetAnimation}
+              />
+            </View>
+            
+            <View style={styles.petInfoSection}>
+              <Text style={styles.petName}>{currentPet.name}</Text>
+              <Text style={styles.petPersonality}>{currentPet.personality}</Text>
+            </View>
+            
+            <View style={styles.statsSection}>
+              <View style={styles.statRow}>
+                <View style={styles.statItem}>
+                  <Trophy size={16} color={colors.accent} />
+                  <Text style={styles.statTitle}>Level</Text>
+                  <Text style={styles.statValue}>{currentPet.level}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Utensils size={16} color={colors.warning} />
+                  <Text style={styles.statTitle}>Hunger</Text>
+                  <Text style={styles.statValue}>{currentPet.hunger}%</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Heart size={16} color={colors.error} />
+                  <Text style={styles.statTitle}>Happiness</Text>
+                  <Text style={styles.statValue}>{currentPet.happiness}%</Text>
+                </View>
+              </View>
+              
+              <View style={styles.progressSection}>
+                <Text style={styles.progressLabel}>Experience</Text>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${currentPet.experience}%` }]} />
+                </View>
+                <Text style={styles.progressText}>{currentPet.experience}% to next level</Text>
+              </View>
+            </View>
+            
+            <View style={styles.detailsSection}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Abilities:</Text>
+                <Text style={styles.detailValue}>{currentPet.abilities.join(', ')}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Favorite Food:</Text>
+                <Text style={styles.detailValue}>{currentPet.favoriteFood}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Birthday:</Text>
+                <Text style={styles.detailValue}>{currentPet.birthdate}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -521,5 +616,124 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.white,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
+    maxHeight: '85%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 1,
+    padding: 4,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    ...typography.heading2,
+    color: colors.text,
+  },
+  modalPetContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalPetAnimation: {
+    width: 150,
+    height: 150,
+  },
+  petInfoSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  petName: {
+    ...typography.heading2,
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  petPersonality: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  statsSection: {
+    marginBottom: 24,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statTitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  statValue: {
+    ...typography.heading3,
+    color: colors.text,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  progressSection: {
+    marginBottom: 16,
+  },
+  progressLabel: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: colors.border,
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 5,
+  },
+  progressText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  detailsSection: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  detailLabel: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  detailValue: {
+    ...typography.body,
+    color: colors.text,
+    flex: 1,
+    textAlign: 'right',
   },
 });
