@@ -296,6 +296,8 @@ const styles = StyleSheet.create({
   marathonCard: {
     backgroundColor: colors.card,
     marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: 20,
     borderRadius: 16,
     padding: 20,
@@ -308,6 +310,8 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginHorizontal: 20,
     borderRadius: 16,
     padding: 20,
@@ -447,6 +451,8 @@ const styles = StyleSheet.create({
   },
   rewardCard: {
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 20,
     shadowColor: colors.border,
@@ -498,6 +504,8 @@ const styles = StyleSheet.create({
   },
   marathonInfoCard: {
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border, 
     marginHorizontal: 20,
     marginTop: 20,
     borderRadius: 16,

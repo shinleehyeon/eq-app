@@ -17,7 +17,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle, Route } from 'lucide-react-native';
+import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle, Route, Users } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -333,7 +333,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.marathonStatusFooter}>
               <View style={styles.marathonStatusDot} />
-              <Text style={styles.marathonStatusText}>참여중</Text>
+              <Text style={styles.marathonStatusText}>Participating</Text>
             </View>
           </View>
         </View>
@@ -404,6 +404,16 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+        
+        <View style={styles.communitySection}>
+          <TouchableOpacity 
+            style={styles.communityButton}
+            onPress={() => router.push('/screens/community')}
+          >
+            <Users size={20} color={colors.white} />
+            <Text style={styles.communityButtonText}>Go to Community</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
             
@@ -830,6 +840,29 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     textAlign: 'right',
+  },
+  communitySection: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  communityButton: {
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  communityButtonText: {
+    ...typography.button,
+    color: colors.white,
+    fontWeight: '600',
   },
   marathonStatusContainer: {
     backgroundColor: colors.card,
