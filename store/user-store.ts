@@ -10,6 +10,7 @@ interface UserState {
   accessToken: string | null;
   isLoading: boolean;
   error: string | null;
+  selectedPet: string;
   
   // Actions
   initializeUser: () => Promise<void>;
@@ -26,6 +27,7 @@ interface UserState {
   unfollowUser: (userId: string) => void;
   setUser: (userData: Partial<User>, accessToken?: string) => void;
   addPlant: (plant: Plant) => void;
+  setSelectedPet: (petId: string) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -36,6 +38,7 @@ export const useUserStore = create<UserState>()(
       accessToken: null,
       isLoading: false,
       error: null,
+      selectedPet: 'duck',
       
       initializeUser: async () => {
         try {
@@ -334,6 +337,10 @@ export const useUserStore = create<UserState>()(
         };
 
         set({ user: updatedUser });
+      },
+
+      setSelectedPet: (petId: string) => {
+        set({ selectedPet: petId });
       }
     }),
     {

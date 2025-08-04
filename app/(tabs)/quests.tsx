@@ -84,7 +84,7 @@ export default function QuestsScreen() {
             <QuestCard 
               key={quest.id}
               challenge={quest}
-              onPress={(quest) => router.push(`/challenge-detail/${quest.id}`)}
+              onPress={() => router.push(`/quest-detail?id=${quest.id}`)}
               showAuthor={false} // Don't show author for Daily Quests
               isActive={activeQuests.includes(quest.id)}
             />

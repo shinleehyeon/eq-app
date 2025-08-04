@@ -14,8 +14,9 @@ import { Stack, useRouter } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import LottieView from 'lottie-react-native';
-import { X, Star, Coins, ArrowLeft } from 'lucide-react-native';
+import { X, Star, Coins, ArrowLeft, Check } from 'lucide-react-native';
 import Button from '@/components/Button';
+import { useUserStore } from '@/store/user-store';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ const pets: Pet[] = [
     description: 'A cheerful duck that loves keeping the environment clean!',
     animationSource: require('@/assets/animation/duck.json'),
     rarity: 'common',
-    owned: false,
+    owned: true,
   },
   {
     id: 'turtle',
@@ -46,7 +47,25 @@ const pets: Pet[] = [
     description: 'A wise turtle that protects ocean life and reduces plastic waste.',
     animationSource: require('@/assets/animation/turtle.json'),
     rarity: 'rare',
+    owned: false,
+  },
+  {
+    id: 'bird',
+    name: 'Sky Guardian',
+    price: 200,
+    description: 'A graceful bird that monitors air quality and spreads eco-awareness.',
+    animationSource: require('@/assets/animation/bird.json'),
+    rarity: 'common',
     owned: true,
+  },
+  {
+    id: 'giraffe',
+    name: 'Forest Giant',
+    price: 500,
+    description: 'A gentle giraffe that helps protect forests and plant trees.',
+    animationSource: require('@/assets/animation/giraffe.json'),
+    rarity: 'epic',
+    owned: false,
   },
 ];
 
@@ -59,6 +78,7 @@ const rarityColors = {
 
 export default function ShopScreen() {
   const router = useRouter();
+  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet } = useUserStore();
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [userCoins] = useState(500); // Mock user coins
 
@@ -67,38 +87,64 @@ export default function ShopScreen() {
     setSelectedPet(null);
   };
 
+  const handleSelectPet = (petId: string) => {
+    setCurrentPet(petId);
+    setSelectedPet(null);
+  };
+
   const PetCard = ({ pet }: { pet: Pet }) => (
     <TouchableOpacity
       style={[
         styles.petCard,
-        { borderColor: rarityColors[pet.rarity] }
+        { borderColor: pet.owned ? rarityColors[pet.rarity] : colors.border },
+        !pet.owned && styles.notOwnedCard
       ]}
       onPress={() => setSelectedPet(pet)}
       activeOpacity={0.8}
     >
-      <View style={[styles.rarityBadge, { backgroundColor: rarityColors[pet.rarity] }]}>
+      {!pet.owned && (
+        <View style={styles.lockOverlay}>
+          <View style={styles.lockBadge}>
+            <Coins size={14} color={colors.white} />
+            <Text style={styles.lockText}>{pet.price}</Text>
+          </View>
+        </View>
+      )}
+      
+      <View style={[styles.rarityBadge, { 
+        backgroundColor: pet.owned ? rarityColors[pet.rarity] : colors.textSecondary 
+      }]}>
         <Text style={styles.rarityText}>{pet.rarity.toUpperCase()}</Text>
       </View>
       
-      <View style={styles.petAnimationContainer}>
+      <View style={[styles.petAnimationContainer, !pet.owned && styles.grayscale]}>
         <LottieView
           source={pet.animationSource}
           autoPlay
           loop
-          style={styles.petAnimation}
+          style={[styles.petAnimation, !pet.owned && { opacity: 0.5 }]}
         />
       </View>
       
-      <Text style={styles.petName}>{pet.name}</Text>
+      <Text style={[styles.petName, !pet.owned && styles.notOwnedText]}>{pet.name}</Text>
       
-      <View style={styles.priceContainer}>
-        <Coins size={16} color={colors.accent} />
-        <Text style={styles.price}>{pet.price}</Text>
-      </View>
-      
-      {pet.owned && (
-        <View style={styles.ownedBadge}>
-          <Text style={styles.ownedText}>OWNED</Text>
+      {!pet.owned ? (
+        <View style={styles.priceContainer}>
+          <Coins size={16} color={colors.warning} />
+          <Text style={styles.price}>{pet.price}</Text>
+        </View>
+      ) : (
+        <View style={styles.statusContainer}>
+          {currentPetId === pet.id ? (
+            <View style={styles.selectedBadge}>
+              <Check size={12} color={colors.white} />
+              <Text style={styles.ownedText}>SELECTED</Text>
+            </View>
+          ) : (
+            <View style={styles.ownedBadge}>
+              <Text style={styles.ownedText}>OWNED</Text>
+            </View>
+          )}
         </View>
       )}
     </TouchableOpacity>
@@ -120,7 +166,7 @@ export default function ShopScreen() {
       
       <View style={styles.header}>
         <View style={styles.coinsContainer}>
-          <Coins size={24} color={colors.accent} />
+          <Coins size={24} color={colors.warning} />
           <Text style={styles.coinsText}>{userCoins}</Text>
         </View>
       </View>
@@ -174,14 +220,23 @@ export default function ShopScreen() {
                 <Text style={styles.modalDescription}>{selectedPet.description}</Text>
 
                 <View style={styles.modalPriceContainer}>
-                  <Coins size={20} color={colors.accent} />
+                  <Coins size={20} color={colors.warning} />
                   <Text style={styles.modalPrice}>{selectedPet.price} coins</Text>
                 </View>
 
                 {selectedPet.owned ? (
-                  <View style={styles.ownedContainer}>
-                    <Text style={styles.ownedModalText}>You already own this pet!</Text>
-                  </View>
+                  currentPetId === selectedPet.id ? (
+                    <View style={styles.selectedContainer}>
+                      <Check size={20} color={colors.success} />
+                      <Text style={styles.selectedModalText}>Currently Selected</Text>
+                    </View>
+                  ) : (
+                    <Button
+                      title="Select Pet"
+                      onPress={() => handleSelectPet(selectedPet.id)}
+                      style={styles.selectButton}
+                    />
+                  )
                 ) : (
                   <Button
                     title={userCoins >= selectedPet.price ? 'Purchase' : 'Not enough coins'}
@@ -228,7 +283,7 @@ const styles = StyleSheet.create({
   coinsText: {
     ...typography.body,
     fontWeight: 'bold',
-    color: colors.accent,
+    color: colors.warning,
     marginLeft: 6,
   },
   scrollView: {
@@ -295,17 +350,8 @@ const styles = StyleSheet.create({
   price: {
     ...typography.body,
     fontWeight: 'bold',
-    color: colors.accent,
+    color: colors.warning,
     marginLeft: 4,
-  },
-  ownedBadge: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: colors.success,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
   ownedText: {
     ...typography.caption,
@@ -371,7 +417,7 @@ const styles = StyleSheet.create({
   },
   modalPrice: {
     ...typography.heading3,
-    color: colors.accent,
+    color: colors.warning,
     marginLeft: 8,
   },
   purchaseButton: {
@@ -391,5 +437,79 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     marginLeft: 8,
+  },
+  selectedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.success + '20',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  selectedModalText: {
+    ...typography.body,
+    color: colors.success,
+    fontWeight: 'bold',
+  },
+  selectButton: {
+    width: '100%',
+    backgroundColor: colors.primary,
+  },
+  ownedBadge: {
+    backgroundColor: colors.success,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  selectedBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  notOwnedCard: {
+    backgroundColor: colors.background,
+    opacity: 0.9,
+  },
+  lockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockBadge: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  lockText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: 'bold',
+  },
+  grayscale: {
+    opacity: 0.4,
+  },
+  notOwnedText: {
+    color: colors.textSecondary,
+  },
+  statusContainer: {
+    marginTop: 8,
   },
 });

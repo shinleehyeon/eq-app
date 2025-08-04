@@ -141,25 +141,84 @@ const FloatingPetBackground = ({ children }) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, initializeUser } = useUserStore();
+  const { user, initializeUser, selectedPet } = useUserStore();
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
   const [showPetModal, setShowPetModal] = useState(false);
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef(null);
   
-  // Mock pet data
-  const currentPet = {
-    name: 'Ocean Duck',
-    level: 5,
-    experience: 60,
-    happiness: 85,
-    hunger: 30,
-    abilities: ['Water Conservation', 'Ocean Cleanup'],
-    personality: 'Playful and energetic',
-    favoriteFood: 'Seaweed Snacks',
-    birthdate: '2024-01-15',
+  // Get animation source based on selected pet
+  const getAnimationSource = () => {
+    switch(selectedPet) {
+      case 'turtle':
+        return require('@/assets/animation/turtle.json');
+      case 'bird':
+        return require('@/assets/animation/bird.json');
+      case 'giraffe':
+        return require('@/assets/animation/giraffe.json');
+      case 'duck':
+      default:
+        return require('@/assets/animation/duck.json');
+    }
   };
+
+  // Mock pet data based on selected pet
+  const getPetData = () => {
+    switch(selectedPet) {
+      case 'turtle':
+        return {
+          name: 'Sea Turtle',
+          level: 5,
+          experience: 60,
+          happiness: 85,
+          hunger: 30,
+          abilities: ['Ocean Protection', 'Plastic Cleanup'],
+          personality: 'Wise and calm',
+          favoriteFood: 'Seaweed',
+          birthdate: '2024-01-10',
+        };
+      case 'bird':
+        return {
+          name: 'Sky Guardian',
+          level: 4,
+          experience: 45,
+          happiness: 90,
+          hunger: 25,
+          abilities: ['Air Quality Monitor', 'Eco-awareness'],
+          personality: 'Graceful and alert',
+          favoriteFood: 'Seeds',
+          birthdate: '2024-02-01',
+        };
+      case 'giraffe':
+        return {
+          name: 'Forest Giant',
+          level: 7,
+          experience: 80,
+          happiness: 75,
+          hunger: 40,
+          abilities: ['Tree Protection', 'Forest Care'],
+          personality: 'Gentle and caring',
+          favoriteFood: 'Leaves',
+          birthdate: '2023-12-20',
+        };
+      case 'duck':
+      default:
+        return {
+          name: 'Ocean Duck',
+          level: 5,
+          experience: 60,
+          happiness: 85,
+          hunger: 30,
+          abilities: ['Water Conservation', 'Ocean Cleanup'],
+          personality: 'Playful and energetic',
+          favoriteFood: 'Seaweed Snacks',
+          birthdate: '2024-01-15',
+        };
+    }
+  };
+
+  const currentPet = getPetData();
   
   useEffect(() => {
     const ensureUserInitialization = async () => {
@@ -279,10 +338,16 @@ export default function HomeScreen() {
               <FloatingPetBackground>
                 <LottieView
                   ref={animationRef}
-                  source={require('@/assets/animation/duck.json')}
+                  source={getAnimationSource()}
                   autoPlay={isTurtleAnimating}
                   loop={false}
-                  style={[styles.petAnimation, styles.petAnimationTurtle]}
+                  style={[
+                    styles.petAnimation,
+                    selectedPet === 'duck' && styles.petAnimationDuck,
+                    selectedPet === 'turtle' && styles.petAnimationTurtle,
+                    selectedPet === 'giraffe' && styles.petAnimationGiraffe,
+                    selectedPet === 'bird' && styles.petAnimationBird,
+                  ]}
                   onAnimationFinish={() => {
                     setIsTurtleAnimating(false);
                     timeoutRef.current = setTimeout(() => {
@@ -354,7 +419,7 @@ export default function HomeScreen() {
             
             <View style={styles.modalPetContainer}>
               <LottieView
-                source={require('@/assets/animation/duck.json')}
+                source={getAnimationSource()}
                 autoPlay
                 loop
                 style={styles.modalPetAnimation}
@@ -546,6 +611,14 @@ const styles = StyleSheet.create({
   petAnimationTurtle: {
     width: '100%',
     height: '100%',
+  },
+  petAnimationBird: {
+    width: '90%',
+    height: '90%',
+  },
+  petAnimationGiraffe: {
+    width: '80%',
+    height: '80%',
   },
   bubble: {
     position: 'absolute',
