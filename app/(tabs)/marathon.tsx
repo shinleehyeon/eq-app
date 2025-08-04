@@ -10,19 +10,36 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
-import { Trophy, ChevronRight, MapPin, Flag, Star } from 'lucide-react-native';
+import { Trophy, ChevronRight, MapPin, Flag, Star, Crown } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
+import { useUserStore } from '@/store/user-store';
 
 const { width } = Dimensions.get('window');
 
 export default function MarathonScreen() {
-  const [currentProgress, setCurrentProgress] = useState(4.2); // 4.2km 진행
-  const totalDistance = 10; // 총 10km
+  const { selectedPet } = useUserStore();
+  const [currentProgress, setCurrentProgress] = useState(4.2); 
+  const [firstPlaceProgress, setFirstPlaceProgress] = useState(6.8); 
+  const totalDistance = 10; 
   
   const handleViewLeaderboard = () => {
     router.push('/screens/leaderboard');
+  };
+
+  const getSelectedPetAnimation = () => {
+    switch(selectedPet) {
+      case 'bird':
+        return require('@/assets/animation/bird.json');
+      case 'duck':
+        return require('@/assets/animation/duck.json');
+      case 'giraffe':
+        return require('@/assets/animation/giraffe.json');
+      case 'turtle':
+      default:
+        return require('@/assets/animation/turtle.json');
+    }
   };
   
   const milestones = [
@@ -92,7 +109,6 @@ export default function MarathonScreen() {
       />
       
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        {/* 헤더 */}
         <View style={styles.headerSection}>
           
           <View style={styles.progressCard}>
@@ -178,10 +194,8 @@ export default function MarathonScreen() {
                 const prevPos = getPosition(prev.row, prev.col);
                 const currPos = getPosition(milestone.row, milestone.col);
                 
-                // 경로 상의 위치 계산
                 let x, y;
                 if (index === 3 || index === 6) {
-                  // S자 곡선 구간
                   const isRightToLeft = index === 6;
                   const curveOffset = isRightToLeft ? -100 : 100;
                   
@@ -190,7 +204,6 @@ export default function MarathonScreen() {
                   const cp2x = currPos.x - curveOffset;
                   const cp2y = currPos.y - 40;
                   
-                  // 베지어 곡선 공식
                   x = Math.pow(1-t, 3) * prevPos.x + 
                       3 * Math.pow(1-t, 2) * t * cp1x + 
                       3 * (1-t) * Math.pow(t, 2) * cp2x + 
@@ -200,7 +213,6 @@ export default function MarathonScreen() {
                       3 * (1-t) * Math.pow(t, 2) * cp2y + 
                       Math.pow(t, 3) * currPos.y;
                 } else {
-                  // 직선 구간
                   x = prevPos.x + (currPos.x - prevPos.x) * t;
                   y = prevPos.y + (currPos.y - prevPos.y) * t;
                 }
@@ -211,10 +223,60 @@ export default function MarathonScreen() {
                     style={[styles.currentMarker, { left: x - 25, top: y - 25 }]}
                   >
                     <LottieView
-                      source={require('@/assets/animation/turtle.json')}
+                      source={getSelectedPetAnimation()}
                       autoPlay
                       loop
-                      style={styles.turtleAnimation}
+                      style={styles.petAnimation}
+                    />
+                  </View>
+                );
+              }
+              return null;
+            })}
+            
+            {milestones.map((milestone, index) => {
+              if (index === 0) return null;
+              const prev = milestones[index - 1];
+              
+              if (firstPlaceProgress >= prev.distance && firstPlaceProgress <= milestone.distance) {
+                const t = (firstPlaceProgress - prev.distance) / (milestone.distance - prev.distance);
+                const prevPos = getPosition(prev.row, prev.col);
+                const currPos = getPosition(milestone.row, milestone.col);
+                
+                let x, y;
+                if (index === 3 || index === 6) {
+                  const isRightToLeft = index === 6;
+                  const curveOffset = isRightToLeft ? -100 : 100;
+                  
+                  const cp1x = prevPos.x + curveOffset;
+                  const cp1y = prevPos.y + 40;
+                  const cp2x = currPos.x - curveOffset;
+                  const cp2y = currPos.y - 40;
+                  
+                  x = Math.pow(1-t, 3) * prevPos.x + 
+                      3 * Math.pow(1-t, 2) * t * cp1x + 
+                      3 * (1-t) * Math.pow(t, 2) * cp2x + 
+                      Math.pow(t, 3) * currPos.x;
+                  y = Math.pow(1-t, 3) * prevPos.y + 
+                      3 * Math.pow(1-t, 2) * t * cp1y + 
+                      3 * (1-t) * Math.pow(t, 2) * cp2y + 
+                      Math.pow(t, 3) * currPos.y;
+                } else {
+                  x = prevPos.x + (currPos.x - prevPos.x) * t;
+                  y = prevPos.y + (currPos.y - prevPos.y) * t;
+                }
+                
+                return (
+                  <View
+                    key="first-place-marker"
+                    style={[styles.kingContainer, { position: 'absolute', left: x - 35, top: y - 35 }]}
+                  >
+                    <LottieView
+                      source={require('@/assets/animation/king.json')}
+                      autoPlay
+                      loop
+                      speed={0.5}
+                      style={styles.kingAnimation}
                     />
                   </View>
                 );
@@ -417,9 +479,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  turtleAnimation: {
+  petAnimation: {
     width: 50,
     height: 50,
+  },
+  kingContainer: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'transparent',
+    borderRadius: 35,
+    overflow: 'hidden',
+  },
+  kingAnimation: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'transparent',
   },
   bottomSection: {
     paddingHorizontal: 20,
