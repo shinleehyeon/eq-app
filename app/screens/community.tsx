@@ -1,67 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView,
   TouchableOpacity,
-  SafeAreaView
+  SafeAreaView,
+  Modal,
+  TextInput,
+  Image,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback
 } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { MessageCircle, Users, Heart, Share2, TrendingUp } from 'lucide-react-native';
+import { Stack } from 'expo-router';
+import { MessageCircle, Users, TrendingUp, Plus, X, Camera } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 
 interface Post {
   id: string;
   author: string;
+  title: string;
   content: string;
-  likes: number;
-  comments: number;
-  shares: number;
+  image?: string;
   timestamp: string;
 }
 
-const mockPosts: Post[] = [
+const initialPosts: Post[] = [
   {
     id: '1',
     author: 'Sarah Green',
+    title: 'Beach Cleanup Success!',
     content: 'Just completed my first eco quest! Cleaned up 2kg of plastic from the beach. Feeling proud! 🌊',
-    likes: 45,
-    comments: 12,
-    shares: 3,
     timestamp: '2 hours ago'
   },
   {
     id: '2',
     author: 'Mike Earth',
+    title: 'Level 10 Achievement',
     content: 'My turtle just reached level 10! Thanks to everyone who shared tips on how to level up faster.',
-    likes: 78,
-    comments: 23,
-    shares: 5,
     timestamp: '5 hours ago'
   },
   {
     id: '3',
     author: 'Emma Eco',
+    title: 'Community Garden Project',
     content: 'Started a community garden in my neighborhood. Looking for volunteers to help maintain it!',
-    likes: 92,
-    comments: 34,
-    shares: 12,
     timestamp: '1 day ago'
   },
   {
     id: '4',
     author: 'John Planet',
+    title: 'New Member Introduction',
     content: 'New to EcoQuest! Any tips for a beginner? Excited to start my eco journey!',
-    likes: 31,
-    comments: 18,
-    shares: 2,
     timestamp: '2 days ago'
   }
 ];
 
 export default function CommunityScreen() {
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [showAddStory, setShowAddStory] = useState(false);
+  const [storyTitle, setStoryTitle] = useState('');
+  const [storyContent, setStoryContent] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const handleAddStory = () => {
+    if (storyTitle.trim() && storyContent.trim()) {
+      const newPost: Post = {
+        id: Date.now().toString(),
+        author: 'You',
+        title: storyTitle,
+        content: storyContent,
+        image: selectedImage || undefined,
+        timestamp: 'Just now'
+      };
+      setPosts([newPost, ...posts]);
+      setStoryTitle('');
+      setStoryContent('');
+      setSelectedImage(null);
+      setShowAddStory(false);
+    } else {
+      Alert.alert('Missing Information', 'Please add both title and content for your story.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
@@ -92,13 +131,16 @@ export default function CommunityScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.createPostButton}>
-          <MessageCircle size={20} color={colors.white} />
-          <Text style={styles.createPostText}>Share Your Eco Story</Text>
+        <TouchableOpacity 
+          style={styles.createPostButton}
+          onPress={() => setShowAddStory(true)}
+        >
+          <Plus size={20} color={colors.white} />
+          <Text style={styles.createPostText}>Add Your Story</Text>
         </TouchableOpacity>
 
         <View style={styles.postsContainer}>
-          {mockPosts.map(post => (
+          {posts.map(post => (
             <View key={post.id} style={styles.postCard}>
               <View style={styles.postHeader}>
                 <View style={styles.authorAvatar}>
@@ -112,26 +154,86 @@ export default function CommunityScreen() {
                 </View>
               </View>
               
+              <Text style={styles.postTitle}>{post.title}</Text>
               <Text style={styles.postContent}>{post.content}</Text>
               
-              <View style={styles.postActions}>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Heart size={18} color={colors.textSecondary} />
-                  <Text style={styles.actionText}>{post.likes}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <MessageCircle size={18} color={colors.textSecondary} />
-                  <Text style={styles.actionText}>{post.comments}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Share2 size={18} color={colors.textSecondary} />
-                  <Text style={styles.actionText}>{post.shares}</Text>
-                </TouchableOpacity>
-              </View>
+              {post.image && (
+                <Image source={{ uri: post.image }} style={styles.postImage} />
+              )}
             </View>
           ))}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showAddStory}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddStory(false)}
+      >
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalContent}>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add Your Story</Text>
+                <TouchableOpacity onPress={() => setShowAddStory(false)}>
+                  <X size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+              
+              <TextInput
+                style={styles.titleInput}
+                placeholder="Title"
+                placeholderTextColor={colors.textSecondary}
+                value={storyTitle}
+                onChangeText={setStoryTitle}
+              />
+              
+              <TextInput
+                style={styles.storyInput}
+                placeholder="Share your eco journey..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                value={storyContent}
+                onChangeText={setStoryContent}
+              />
+              
+              <TouchableOpacity 
+                style={styles.imageButton}
+                onPress={pickImage}
+              >
+                <Camera size={20} color={colors.primary} />
+                <Text style={styles.imageButtonText}>
+                  {selectedImage ? 'Change Photo' : 'Add Photo'}
+                </Text>
+              </TouchableOpacity>
+              
+              {selectedImage && (
+                <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+              )}
+              
+              <TouchableOpacity 
+                style={styles.postButton}
+                onPress={handleAddStory}
+              >
+                <Text style={styles.postButtonText}>Post Story</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -237,26 +339,104 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  postTitle: {
+    ...typography.heading4,
+    color: colors.text,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   postContent: {
     ...typography.body,
     color: colors.text,
     lineHeight: 22,
     marginBottom: 12,
   },
-  postActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginTop: 8,
   },
-  actionButton: {
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    maxHeight: '90%',
+    minHeight: '60%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    ...typography.heading3,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  titleInput: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+    ...typography.body,
+    color: colors.text,
+    marginBottom: 12,
+  },
+  storyInput: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+    minHeight: 120,
+    ...typography.body,
+    color: colors.text,
+    textAlignVertical: 'top',
+    marginBottom: 12,
+  },
+  imageButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 12,
   },
-  actionText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+  imageButtonText: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  selectedImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  postButton: {
+    backgroundColor: colors.primary,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  postButtonText: {
+    ...typography.button,
+    color: colors.white,
+    fontWeight: '600',
   },
 });

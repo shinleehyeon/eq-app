@@ -6,7 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  SafeAreaView
+  SafeAreaView,
+  Image
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -109,6 +110,11 @@ export default function MarathonScreen() {
       
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         <View style={styles.marathonInfoCard}>
+          <Image 
+            source={require('@/assets/images/ad.png')} 
+            style={styles.marathonBanner}
+            resizeMode="cover"
+          />
           <Text style={styles.marathonTitle}>Eco Marathon Challenge</Text>
           <View style={styles.dateContainer}>
             <View style={styles.dateItem}>
@@ -509,7 +515,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 20,
     borderRadius: 16,
-    padding: 20,
+    overflow: 'hidden',
     marginBottom: 10,
     shadowColor: colors.border,
     shadowOffset: { width: 0, height: 2 },
@@ -517,17 +523,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  marathonBanner: {
+    width: '100%',
+    height: 80,
+  },
   marathonTitle: {
     ...typography.heading2,
     color: colors.text,
     textAlign: 'center',
+    marginTop: 20,
     marginBottom: 16,
+    paddingHorizontal: 20,
     fontWeight: '700',
   },
   dateContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   dateItem: {
     alignItems: 'center',
