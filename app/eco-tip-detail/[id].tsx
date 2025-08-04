@@ -14,12 +14,14 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
-import { ExternalLink, Share2, User, MoreVertical, Pencil, Trash2 } from 'lucide-react-native';
+import { ExternalLink, Share2, User, MoreVertical, Pencil, Trash2, Bookmark, BookmarkCheck, Clock } from 'lucide-react-native';
+import { Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { fetchUserDataFromFirebase } from '@/utils/firebase-helpers';
 import { database } from '@/config/firebase';
 import { ref, get, set } from 'firebase/database';
 import { useUserStore } from '@/store/user-store';
+import mockEcoTips from '@/mocks/eco-tips';
 
 export default function EcoTipDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -29,12 +31,25 @@ export default function EcoTipDetailScreen() {
   const [relatedTips, setRelatedTips] = useState([]);
   const { user } = useUserStore();
   const [menuVisible, setMenuVisible] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(null);
   
   useEffect(() => {
     const fetchTipData = async () => {
       if (!id) return;
       
       try {
+        // First try to find in mock data
+        const mockTip = mockEcoTips.find(tip => tip.id === id);
+        if (mockTip) {
+          setTip(mockTip);
+          return;
+        }
+
+        // If not found in mock data, try Firebase
         const tipRef = ref(database, `learn/${id}`);
         const snapshot = await get(tipRef);
         
@@ -73,6 +88,17 @@ export default function EcoTipDetailScreen() {
       if (!tip?.category) return;
 
       try {
+        // First get related tips from mock data
+        const mockRelatedTips = mockEcoTips
+          .filter(t => t.id !== id && t.category === tip.category)
+          .slice(0, 2);
+        
+        if (mockRelatedTips.length > 0) {
+          setRelatedTips(mockRelatedTips);
+          return;
+        }
+
+        // If not enough mock data, try Firebase
         const learnRef = ref(database, 'learn');
         const snapshot = await get(learnRef);
         
@@ -163,6 +189,105 @@ export default function EcoTipDetailScreen() {
       ]
     );
   };
+
+  const handleBookmark = () => {
+    setIsBookmarked(!isBookmarked);
+    Alert.alert(
+      isBookmarked ? 'Removed from Bookmarks' : 'Added to Bookmarks',
+      isBookmarked ? 'Tip removed from your bookmarks' : 'Tip saved to your bookmarks'
+    );
+  };
+
+  const handleSourceClick = () => {
+    if (tip?.sourceLink) {
+      Linking.openURL(tip.sourceLink);
+    }
+  };
+
+  const generateQuizData = (tip) => {
+    // Generate quiz based on tip content
+    const quizzes = {
+      't1': {
+        question: "What percentage of all plastic ever made has been recycled?",
+        options: ["9%", "25%", "45%", "60%"],
+        correctAnswer: 0
+      },
+      't2': {
+        question: "By how much can switching to a plant-based diet reduce your food carbon footprint?",
+        options: ["30%", "50%", "73%", "90%"],
+        correctAnswer: 2
+      },
+      't3': {
+        question: "What percentage of global carbon emissions does the fashion industry produce?",
+        options: ["5%", "10%", "15%", "20%"],
+        correctAnswer: 1
+      },
+      't4': {
+        question: "What percentage of global carbon emissions does the internet produce?",
+        options: ["1.5%", "2.8%", "3.7%", "5.2%"],
+        correctAnswer: 2
+      },
+      't5': {
+        question: "How much water does a running tap use per minute?",
+        options: ["3 liters", "6 liters", "9 liters", "12 liters"],
+        correctAnswer: 1
+      },
+      't6': {
+        question: "What is the main advantage of native plants?",
+        options: ["They're cheaper", "They require less water and pesticides", "They grow faster", "They're more colorful"],
+        correctAnswer: 1
+      },
+      't7': {
+        question: "What percentage of greenhouse gas emissions does transportation account for in the US?",
+        options: ["15%", "20%", "25%", "30%"],
+        correctAnswer: 3
+      },
+      't8': {
+        question: "What fraction of all food produced globally is wasted?",
+        options: ["One-quarter", "One-third", "One-half", "Two-thirds"],
+        correctAnswer: 1
+      }
+    };
+
+    return quizzes[tip.id] || {
+      question: `What is the main topic of this ${tip.category} tip?`,
+      options: [
+        `${tip.category} conservation`,
+        "General recycling",
+        "Water usage",
+        "Energy efficiency"
+      ],
+      correctAnswer: 0
+    };
+  };
+
+  const handleQuizAnswer = (answerIndex) => {
+    if (quizCompleted) return;
+    
+    setSelectedAnswer(answerIndex);
+    const quiz = generateQuizData(tip);
+    const correct = answerIndex === quiz.correctAnswer;
+    setIsCorrect(correct);
+    setQuizCompleted(true);
+
+    // Show result after a short delay
+    setTimeout(() => {
+      Alert.alert(
+        correct ? "Correct! 🎉" : "Incorrect 😔",
+        correct 
+          ? "Great job! You've understood the key point of this tip."
+          : `The correct answer was: ${quiz.options[quiz.correctAnswer]}`,
+        [{ text: "OK" }]
+      );
+    }, 500);
+  };
+
+  const resetQuiz = () => {
+    setSelectedAnswer(null);
+    setQuizCompleted(false);
+    setIsCorrect(null);
+    setShowQuiz(false);
+  };
   
   const getCategoryColor = () => {
     switch (tip.category) {
@@ -186,23 +311,34 @@ export default function EcoTipDetailScreen() {
   };
 
   const renderHeaderRight = () => {
-    if (user?.id === tip?.userId) {
-      return (
+    return (
+      <View style={styles.headerActions}>
         <TouchableOpacity 
-          onPress={() => setMenuVisible(true)}
+          onPress={handleBookmark}
           style={styles.headerButton}
         >
-          <MoreVertical size={24} color={colors.text} />
+          {isBookmarked ? 
+            <BookmarkCheck size={24} color={colors.warning} /> : 
+            <Bookmark size={24} color={colors.text} />
+          }
         </TouchableOpacity>
-      );
-    }
-    return (
-      <TouchableOpacity 
-        onPress={handleShare}
-        style={styles.headerButton}
-      >
-        <Share2 size={24} color={colors.text} />
-      </TouchableOpacity>
+        
+        {user?.id === tip?.userId ? (
+          <TouchableOpacity 
+            onPress={() => setMenuVisible(true)}
+            style={styles.headerButton}
+          >
+            <MoreVertical size={24} color={colors.text} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            onPress={handleShare}
+            style={styles.headerButton}
+          >
+            <Share2 size={24} color={colors.text} />
+          </TouchableOpacity>
+        )}
+      </View>
     );
   };
   
@@ -221,15 +357,22 @@ export default function EcoTipDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {tip.imageUrl && (
+        {/* Hero Media Section */}
+        {tip.resourceType === 'video' && tip.videoLink ? (
+          renderVideoPlayer()
+        ) : tip.imageUrl ? (
           <Image 
             source={{ uri: tip.imageUrl }} 
             style={styles.image} 
             resizeMode="cover" 
           />
+        ) : (
+          // Show a category-themed placeholder for tips without images
+          <View style={[styles.placeholderContainer, { backgroundColor: getCategoryColor() }]}>
+            <Text style={styles.placeholderTitle}>{tip.title}</Text>
+            <Text style={styles.placeholderCategory}>{tip.category.toUpperCase()}</Text>
+          </View>
         )}
-        
-        {renderVideoPlayer()}
         
         <View style={styles.content}>
           <View 
@@ -244,6 +387,18 @@ export default function EcoTipDetailScreen() {
           </View>
           
           <Text style={styles.title}>{tip.title}</Text>
+          
+          <View style={styles.metaContainer}>
+            <View style={styles.metaItem}>
+              <Clock size={16} color={colors.textSecondary} />
+              <Text style={styles.metaText}>2 min read</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaText}>•</Text>
+              <Text style={styles.metaText}>{tip.resourceType || 'Tip'}</Text>
+            </View>
+          </View>
+          
           <Text style={styles.tipContent}>{tip.content}</Text>
           
           {tip.userId && author && (
@@ -262,15 +417,80 @@ export default function EcoTipDetailScreen() {
           )}
           
           {tip.source && (
-            <View style={styles.sourceContainer}>
+            <TouchableOpacity 
+              style={styles.sourceContainer} 
+              onPress={handleSourceClick}
+              disabled={!tip.sourceLink}
+            >
               <Text style={styles.sourceLabel}>Source:</Text>
               <View style={styles.sourceContent}>
-                <Text style={styles.sourceText}>{tip.source}</Text>
-                <ExternalLink size={16} color={colors.textSecondary} />
+                <Text style={[styles.sourceText, tip.sourceLink && styles.clickableSource]}>{tip.source}</Text>
+                {tip.sourceLink && <ExternalLink size={16} color={colors.primary} />}
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           
+          <View style={styles.quizContainer}>
+            <Text style={styles.quizTitle}>Test Your Knowledge</Text>
+            <Text style={styles.quizDescription}>
+              Did you understand the key points from this eco-tip?
+            </Text>
+            
+            {!showQuiz ? (
+              <TouchableOpacity 
+                style={styles.startQuizButton}
+                onPress={() => setShowQuiz(true)}
+              >
+                <Text style={styles.startQuizButtonText}>Start Quiz</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.quizContent}>
+                {(() => {
+                  const quiz = generateQuizData(tip);
+                  return (
+                    <>
+                      <Text style={styles.quizQuestion}>{quiz.question}</Text>
+                      
+                      <View style={styles.optionsContainer}>
+                        {quiz.options.map((option, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.optionButton,
+                              selectedAnswer === index && (
+                                isCorrect === true ? styles.correctOption : 
+                                isCorrect === false ? styles.incorrectOption : 
+                                styles.selectedOption
+                              )
+                            ]}
+                            onPress={() => handleQuizAnswer(index)}
+                            disabled={quizCompleted}
+                          >
+                            <Text style={[
+                              styles.optionText,
+                              selectedAnswer === index && quizCompleted && styles.selectedOptionText
+                            ]}>
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                      
+                      {quizCompleted && (
+                        <TouchableOpacity 
+                          style={styles.resetQuizButton}
+                          onPress={resetQuiz}
+                        >
+                          <Text style={styles.resetQuizButtonText}>Try Again</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  );
+                })()}
+              </View>
+            )}
+          </View>
+
           <View style={styles.relatedTipsContainer}>
             <Text style={styles.relatedTipsTitle}>Related Tips</Text>
             
@@ -352,6 +572,29 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  clickableSource: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
+  },
   scrollView: {
     flex: 1,
   },
@@ -361,6 +604,31 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 200,
+  },
+  placeholderContainer: {
+    width: '100%',
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  placeholderTitle: {
+    ...typography.heading3,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  placeholderCategory: {
+    ...typography.caption,
+    color: 'white',
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    letterSpacing: 1,
   },
   videoContainer: {
     width: '100%',
@@ -439,6 +707,84 @@ const styles = StyleSheet.create({
   sourceText: {
     ...typography.body,
     fontStyle: 'italic',
+  },
+  quizContainer: {
+    backgroundColor: colors.card,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  quizTitle: {
+    ...typography.heading3,
+    marginBottom: 8,
+  },
+  quizDescription: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: 16,
+  },
+  startQuizButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  startQuizButtonText: {
+    ...typography.body,
+    color: colors.white,
+    fontWeight: '600',
+  },
+  quizContent: {
+    width: '100%',
+  },
+  quizQuestion: {
+    ...typography.body,
+    fontWeight: '600',
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  optionsContainer: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  optionButton: {
+    backgroundColor: colors.background,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  selectedOption: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '10',
+  },
+  correctOption: {
+    borderColor: colors.success,
+    backgroundColor: colors.success + '20',
+  },
+  incorrectOption: {
+    borderColor: colors.error,
+    backgroundColor: colors.error + '20',
+  },
+  optionText: {
+    ...typography.body,
+    color: colors.text,
+  },
+  selectedOptionText: {
+    fontWeight: '600',
+  },
+  resetQuizButton: {
+    backgroundColor: colors.textSecondary + '20',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignSelf: 'center',
+  },
+  resetQuizButtonText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontWeight: '600',
   },
   relatedTipsContainer: {
     backgroundColor: colors.card,
