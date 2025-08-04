@@ -16,7 +16,8 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
-import { ArrowLeft, Clock, Coins, Users, Camera, MapPin, Leaf, CheckCircle, Share2 } from 'lucide-react-native';
+import { ArrowLeft, Clock, Coins, Users, Camera, MapPin, Leaf, CheckCircle, Share2, ImageIcon } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import Button from '@/components/Button';
 import { useQuestsStore } from '@/store/challenges-store';
 import { useUserStore } from '@/store/user-store';
@@ -34,6 +35,7 @@ export default function QuestDetailScreen() {
   const [showProofModal, setShowProofModal] = useState(false);
   const [proofText, setProofText] = useState('');
   const [proofImage, setProofImage] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // Find the quest from either daily or open quests
   const quest = [...dailyQuests, ...openQuests].find(q => q.id === questId);
@@ -66,11 +68,71 @@ export default function QuestDetailScreen() {
   };
   
   const submitProof = () => {
-    completeQuest(questId, proofText || proofImage);
+    completeQuest(questId, proofText || selectedImage || proofImage);
     setShowProofModal(false);
     setProofText('');
     setProofImage('');
+    setSelectedImage(null);
     router.back();
+  };
+
+  const requestPermissions = async () => {
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
+      Alert.alert(
+        'Permissions Required',
+        'Camera and photo library permissions are required to upload images.',
+        [{ text: 'OK' }]
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const takePhoto = async () => {
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const pickFromGallery = async () => {
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Select Image',
+      'Choose how you want to add a photo',
+      [
+        { text: 'Take Photo', onPress: takePhoto },
+        { text: 'Choose from Gallery', onPress: pickFromGallery },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
   };
   
   return (
@@ -233,16 +295,35 @@ export default function QuestDetailScreen() {
               textAlignVertical="top"
             />
             
-            <TouchableOpacity style={styles.photoButton}>
-              <Camera size={20} color={colors.primary} />
-              <Text style={styles.photoButtonText}>Add Photo</Text>
-            </TouchableOpacity>
+            {selectedImage && (
+              <View style={styles.selectedImageContainer}>
+                <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+                <TouchableOpacity 
+                  style={styles.removeImageButton}
+                  onPress={() => setSelectedImage(null)}
+                >
+                  <Text style={styles.removeImageText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            <View style={styles.photoButtonsContainer}>
+              <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+                <Camera size={20} color={colors.primary} />
+                <Text style={styles.photoButtonText}>Take Photo</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.photoButton} onPress={pickFromGallery}>
+                <ImageIcon size={20} color={colors.primary} />
+                <Text style={styles.photoButtonText}>From Gallery</Text>
+              </TouchableOpacity>
+            </View>
             
             <Button
               title="Submit Proof"
               onPress={submitProof}
               style={styles.submitButton}
-              disabled={!proofText && !proofImage}
+              disabled={!proofText && !selectedImage && !proofImage}
             />
           </View>
         </KeyboardAvoidingView>
@@ -483,20 +564,52 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     minHeight: 100,
   },
+  photoButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
   photoButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
     padding: 16,
     borderRadius: 12,
-    marginBottom: 20,
     gap: 8,
   },
   photoButtonText: {
     ...typography.body,
     color: colors.primary,
     fontWeight: '600',
+  },
+  selectedImageContainer: {
+    position: 'relative',
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  selectedImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    resizeMode: 'cover',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: colors.error,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeImageText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   submitButton: {
     width: '100%',
