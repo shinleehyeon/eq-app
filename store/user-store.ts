@@ -86,6 +86,7 @@ export const useUserStore = create<UserState>()(
             avatar: data.avatar,
             level: 1, // Default level, update as needed
             streak: 0, // Default streak, update as needed
+            coins: 500, // Default coins
             completedQuests: [],
             badges: [],
             plants: [],
@@ -132,6 +133,7 @@ export const useUserStore = create<UserState>()(
             avatar: '', // Default avatar value, replace with actual logic if needed
             level: 1,
             streak: 0,
+            coins: 500, // Default coins
             completedQuests: [],
             badges: [],
             plants: [],
@@ -302,6 +304,7 @@ export const useUserStore = create<UserState>()(
             avatar: userData.avatar || '',
             level: userData.level || 1,
             streak: userData.streak || 0,
+            coins: userData.coins || 500,
             completedQuests: userData.completedQuests || [],
             badges: userData.badges || [],
             plants: userData.plants || [],

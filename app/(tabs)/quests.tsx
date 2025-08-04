@@ -37,7 +37,9 @@ export default function QuestsScreen() {
     openQuests,
     activeQuests,
     fetchDailyQuests,
-    fetchOpenQuests
+    fetchOpenQuests,
+    selectQuest,
+    unselectQuest
   } = useQuestsStore();
   const { users } = useUserStore(); // Add users to access author information
   
@@ -105,11 +107,7 @@ export default function QuestsScreen() {
               key={quest.id}
               challenge={quest}
               isActive={false}
-              onPress={() => {
-                if (selectedQuests.length < 5) {
-                  router.push(`/quest-detail?id=${quest.id}`);
-                }
-              }}
+              onPress={() => router.push(`/quest-detail?id=${quest.id}`)}
               showAuthor={false}
             />
           ))}

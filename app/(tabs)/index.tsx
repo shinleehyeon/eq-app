@@ -18,7 +18,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Sparkles, Info, ShoppingBag, X, Heart, Utensils, Trophy, Star, Zap } from 'lucide-react-native';
+import { Award, Calendar, Sparkles, Info, ShoppingBag, X, Heart, Utensils, Trophy, Star, Zap, Coins } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -260,6 +260,7 @@ export default function HomeScreen() {
     email: 'guest@example.com',
     level: 1,
     streak: 0,
+    coins: 500,
     completedQuests: [],
     badges: [],
     plants: [],
@@ -278,8 +279,6 @@ export default function HomeScreen() {
   const badges = currentUser?.badges || [];
   const completedQuests = currentUser?.completedQuests || [];
   
-  const defaultAvatar = require('@/assets/images/default-avatar.png');
-  const avatarSource = currentUser?.avatar ? { uri: currentUser.avatar } : defaultAvatar;
   
   return (
     <SafeAreaView style={styles.container}>
@@ -296,15 +295,10 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.userStatsContainer}>
-          <View style={styles.userInfo}>
-            <Image 
-              source={avatarSource} 
-              style={styles.avatar} 
-            />
-            <View>
-              <Text style={styles.greeting}>Hello, {currentUser.name.split(' ')[0]}!</Text>
-              <Text style={styles.level}>Level {currentUser.level}</Text>
-            </View>
+          <View style={styles.coinsMainContainer}>
+            <Coins size={32} color={colors.warning} />
+            <Text style={styles.coinsMainText}>{currentUser.coins}</Text>
+            <Text style={styles.coinsLabel}>Coins</Text>
           </View>
           
           <View style={styles.statsRow}>
@@ -427,26 +421,26 @@ export default function HomeScreen() {
             </View>
             
             <View style={styles.petInfoSection}>
-              <Text style={styles.petName}>{currentPet.name}</Text>
+              <Text style={styles.modalPetName}>{currentPet.name}</Text>
               <Text style={styles.petPersonality}>{currentPet.personality}</Text>
             </View>
             
             <View style={styles.statsSection}>
               <View style={styles.statRow}>
-                <View style={styles.statItem}>
-                  <Trophy size={16} color={colors.accent} />
+                <View style={styles.modalStatItem}>
+                  <Trophy size={16} color={colors.primary} />
                   <Text style={styles.statTitle}>Level</Text>
-                  <Text style={styles.statValue}>{currentPet.level}</Text>
+                  <Text style={styles.modalStatValue}>{currentPet.level}</Text>
                 </View>
-                <View style={styles.statItem}>
+                <View style={styles.modalStatItem}>
                   <Utensils size={16} color={colors.warning} />
                   <Text style={styles.statTitle}>Hunger</Text>
-                  <Text style={styles.statValue}>{currentPet.hunger}%</Text>
+                  <Text style={styles.modalStatValue}>{currentPet.hunger}%</Text>
                 </View>
-                <View style={styles.statItem}>
+                <View style={styles.modalStatItem}>
                   <Heart size={16} color={colors.error} />
                   <Text style={styles.statTitle}>Happiness</Text>
-                  <Text style={styles.statValue}>{currentPet.happiness}%</Text>
+                  <Text style={styles.modalStatValue}>{currentPet.happiness}%</Text>
                 </View>
               </View>
               
@@ -513,23 +507,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  userInfo: {
-    flexDirection: 'row',
+  coinsMainContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
+    gap: 8,
   },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
+  coinsMainText: {
+    ...typography.heading1,
+    fontWeight: 'bold',
+    color: colors.warning,
+    fontSize: 36,
   },
-  greeting: {
-    ...typography.heading3,
-    marginBottom: 4,
-  },
-  level: {
-    ...typography.bodySmall,
+  coinsLabel: {
+    ...typography.body,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   statsRow: {
@@ -731,7 +723,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  petName: {
+  modalPetName: {
     ...typography.heading2,
     color: colors.primary,
     marginBottom: 8,
@@ -749,7 +741,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginBottom: 20,
   },
-  statItem: {
+  modalStatItem: {
     alignItems: 'center',
   },
   statTitle: {
@@ -757,7 +749,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
   },
-  statValue: {
+  modalStatValue: {
     ...typography.heading3,
     color: colors.text,
     fontWeight: 'bold',

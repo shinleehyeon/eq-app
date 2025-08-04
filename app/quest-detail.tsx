@@ -16,7 +16,7 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
-import { ArrowLeft, Clock, Award, Users, Camera, MapPin, Leaf, CheckCircle, Share2 } from 'lucide-react-native';
+import { ArrowLeft, Clock, Coins, Users, Camera, MapPin, Leaf, CheckCircle, Share2 } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { useQuestsStore } from '@/store/challenges-store';
 import { useUserStore } from '@/store/user-store';
@@ -28,7 +28,7 @@ export default function QuestDetailScreen() {
   const params = useLocalSearchParams();
   const questId = params.id as string;
   
-  const { dailyQuests, openQuests, activeQuests, acceptQuest, completeQuest } = useQuestsStore();
+  const { dailyQuests, openQuests, activeQuests, acceptQuest, completeQuest, selectQuest, unselectQuest } = useQuestsStore();
   const { user } = useUserStore();
   
   const [showProofModal, setShowProofModal] = useState(false);
@@ -39,6 +39,7 @@ export default function QuestDetailScreen() {
   const quest = [...dailyQuests, ...openQuests].find(q => q.id === questId);
   const isActive = activeQuests.includes(questId);
   const isCompleted = user?.completedQuests?.includes(questId);
+  const canSelectMore = activeQuests.length < 5;
   
   if (!quest) {
     return (
@@ -48,6 +49,14 @@ export default function QuestDetailScreen() {
     );
   }
   
+  const handleSelectQuest = () => {
+    if (isActive) {
+      unselectQuest(questId);
+    } else if (canSelectMore) {
+      selectQuest(questId);
+    }
+  };
+
   const handleAcceptQuest = () => {
     acceptQuest(questId);
   };
@@ -111,7 +120,7 @@ export default function QuestDetailScreen() {
           
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Award size={16} color={colors.warning} />
+              <Coins size={16} color={colors.warning} />
               <Text style={styles.statText}>{quest.points} points</Text>
             </View>
             
@@ -172,18 +181,21 @@ export default function QuestDetailScreen() {
             <CheckCircle size={20} color={colors.success} />
             <Text style={styles.completedText}>Quest Completed!</Text>
           </View>
-        ) : isActive ? (
-          <Button
-            title="Complete Quest"
-            onPress={handleCompleteQuest}
-            style={styles.actionButton}
-          />
         ) : (
-          <Button
-            title="Accept Quest"
-            onPress={handleAcceptQuest}
-            style={styles.actionButton}
-          />
+          <View style={styles.buttonRow}>
+            <Button
+              title={isActive ? "Remove from My Quests" : "Select Quest"}
+              onPress={handleSelectQuest}
+              style={isActive ? [styles.selectButton, styles.removeButton] : styles.selectButton}
+              disabled={!isActive && !canSelectMore}
+            />
+            <Button
+              title="Complete Quest"
+              onPress={handleCompleteQuest}
+              style={!isActive ? [styles.completeButton, styles.disabledButton] : styles.completeButton}
+              disabled={!isActive}
+            />
+          </View>
         )}
       </View>
       
@@ -397,6 +409,25 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '100%',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  selectButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+  },
+  removeButton: {
+    backgroundColor: colors.error,
+  },
+  completeButton: {
+    flex: 1,
+    backgroundColor: colors.success,
+  },
+  disabledButton: {
+    backgroundColor: colors.border,
+    opacity: 0.5,
   },
   completedBadge: {
     flexDirection: 'row',

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { Sparkles, Trophy, Users, Timer, MapPin, Star } from 'lucide-react-native';
+import { Sparkles, Coins, Users, Timer, MapPin, Star } from 'lucide-react-native';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { fetchAuthorById } from '@/utils/firebase-helpers';
@@ -23,7 +23,15 @@ interface Author {
   avatarUrl: string;
 }
 
-export default function QuestCard({ challenge, isActive, onPress, showAuthor = false }: QuestCardProps) {
+export default function QuestCard({ 
+  challenge, 
+  isActive, 
+  onPress, 
+  showAuthor = false, 
+  onSelect, 
+  onUnselect, 
+  selectable = false 
+}: QuestCardProps) {
   const [author, setAuthor] = useState<Author | null>(null);
   const [submissionCount, setSubmissionCount] = useState(0);
   
@@ -112,10 +120,22 @@ export default function QuestCard({ challenge, isActive, onPress, showAuthor = f
     }
   };
   
+  const handlePress = () => {
+    if (selectable) {
+      if (isActive && onUnselect) {
+        onUnselect(challenge.id);
+      } else if (!isActive && onSelect) {
+        onSelect(challenge.id);
+      }
+    } else {
+      onPress(challenge);
+    }
+  };
+
   return (
     <TouchableOpacity
       style={[styles.card, isActive && styles.activeCard]}
-      onPress={() => onPress(challenge)}
+      onPress={handlePress}
       activeOpacity={0.9}
     >
       <View style={styles.cardContent}>
@@ -149,7 +169,7 @@ export default function QuestCard({ challenge, isActive, onPress, showAuthor = f
           {/* Stats row */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Trophy size={12} color={colors.warning} />
+              <Coins size={12} color={colors.warning} />
               <Text style={styles.statText}>{challenge.points}</Text>
             </View>
             

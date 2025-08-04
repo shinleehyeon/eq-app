@@ -5,6 +5,7 @@ export interface User {
     avatar?: string;
     level: number;
     streak: number;
+    coins: number;
     completedQuests: string[];
     badges: Badge[];
     plants: Plant[];
