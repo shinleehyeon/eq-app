@@ -17,12 +17,11 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Leaf } from 'lucide-react-native';
+import { Award, Calendar, Leaf, Info, ShoppingBag } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// Bubble Animation Component
 const AnimatedBubble = ({ size, position, delay = 0 }) => {
   const animatedValue = React.useRef(new Animated.Value(0)).current;
 
@@ -69,10 +68,83 @@ const AnimatedBubble = ({ size, position, delay = 0 }) => {
   );
 };
 
+const FloatingPetBackground = ({ children }) => {
+  const floatAnimation = React.useRef(new Animated.Value(0)).current;
+  const rotateAnimation = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnimation, {
+          toValue: 1,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnimation, {
+          toValue: 0,
+          duration: 3000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(rotateAnimation, {
+          toValue: 1,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnimation, {
+          toValue: -1,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnimation, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const translateY = floatAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -20],
+  });
+
+  const translateX = rotateAnimation.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [-10, 0, 10],
+  });
+
+  const scale = floatAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.03, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.petBackground,
+        {
+          transform: [{ translateY }, { translateX }, { scale }],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, initializeUser } = useUserStore();
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
+  const animationRef = React.useRef(null);
+  const timeoutRef = React.useRef(null);
   
   useEffect(() => {
     const ensureUserInitialization = async () => {
@@ -90,8 +162,15 @@ export default function HomeScreen() {
 
     ensureUserInitialization();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
   
-  // Don't render anything until initialization is complete
   if (isInitializing) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -101,7 +180,6 @@ export default function HomeScreen() {
     );
   }
   
-  // Create a default user if none exists (for demo purposes)
   const currentUser = user || {
     id: 'default',
     name: 'Guest User',
@@ -123,11 +201,9 @@ export default function HomeScreen() {
     }
   };
 
-  // Ensure all arrays have default values and proper null checks
   const badges = currentUser?.badges || [];
   const completedQuests = currentUser?.completedQuests || [];
   
-  // Profile image handling
   const defaultAvatar = require('@/assets/images/default-avatar.png');
   const avatarSource = currentUser?.avatar ? { uri: currentUser.avatar } : defaultAvatar;
   
@@ -145,7 +221,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Stats */}
         <View style={styles.userStatsContainer}>
           <View style={styles.userInfo}>
             <Image 
@@ -179,32 +254,38 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Pet Section */}
         <View style={styles.petSection}>
           <View style={styles.petCard}>
             <View style={styles.petHeader}>
               <Text style={styles.sectionTitle}>Your Eco Pet</Text>
             </View>
             
-            {/* Pet Animation */}
             <View style={styles.petAnimationWrapper}>
-              <View style={styles.petBackground}>
-                {/* Bubble Animations */}
-                <AnimatedBubble size={20} position={{ top: '10%', left: '15%' }} delay={0} />
-                <AnimatedBubble size={15} position={{ top: '20%', right: '20%' }} delay={1} />
-                <AnimatedBubble size={25} position={{ bottom: '15%', left: '10%' }} delay={2} />
-                <AnimatedBubble size={18} position={{ bottom: '25%', right: '15%' }} delay={3} />
-                <AnimatedBubble size={12} position={{ top: '40%', left: '5%' }} delay={4} />
-                
+              <FloatingPetBackground>
                 <LottieView
-                  source={require('@/assets/animation/turtle.json')}
-                  autoPlay
-                  loop
-                  style={styles.petAnimation}
+                  ref={animationRef}
+                  source={require('@/assets/animation/duck.json')}
+                  autoPlay={isTurtleAnimating}
+                  loop={false}
+                  style={[styles.petAnimation, styles.petAnimationTurtle]}
+                  onAnimationFinish={() => {
+                    setIsTurtleAnimating(false);
+                    timeoutRef.current = setTimeout(() => {
+                      setIsTurtleAnimating(true);
+                      if (animationRef.current) {
+                        animationRef.current.play();
+                      }
+                    }, 2000);
+                  }}
                 />
-              </View>
+              </FloatingPetBackground>
               
-              {/* Pet Status Bars */}
+              <AnimatedBubble size={20} position={{ position: 'absolute', top: '10%', left: '15%' }} delay={0} />
+              <AnimatedBubble size={15} position={{ position: 'absolute', top: '20%', right: '20%' }} delay={1} />
+              <AnimatedBubble size={25} position={{ position: 'absolute', bottom: '15%', left: '10%' }} delay={2} />
+              <AnimatedBubble size={18} position={{ position: 'absolute', bottom: '25%', right: '15%' }} delay={3} />
+              <AnimatedBubble size={12} position={{ position: 'absolute', top: '40%', left: '5%' }} delay={4} />
+              
               <View style={styles.petStats}>
                 <View style={styles.statBar}>
                   <Text style={styles.statBarLabel}>Growth</Text>
@@ -215,15 +296,23 @@ export default function HomeScreen() {
               </View>
             </View>
             
-            {/* Shop Button */}
-            <Button
-              title="Visit Pet Shop"
-              onPress={() => {
-                // Navigation will be added later
-                console.log('Navigate to shop');
-              }}
-              style={styles.shopButton}
-            />
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.detailButton]}
+                onPress={() => console.log('Pet detail')}
+              >
+                <Info size={18} color={colors.white} />
+                <Text style={styles.buttonText}>Pet Details</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.shopButton]}
+                onPress={() => router.push('/shop')}
+              >
+                <ShoppingBag size={18} color={colors.white} />
+                <Text style={styles.buttonText}>Pet Shop</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -259,6 +348,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     padding: 16,
     marginBottom: 16,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   userInfo: {
     flexDirection: 'row',
@@ -298,15 +391,15 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   petSection: {
-    padding: 16,
+    paddingBottom: 16,
   },
   petCard: {
     backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    elevation: 8,
+    padding: 20,
+    borderRadius: 16,
+    marginHorizontal: 16,
   },
   petHeader: {
     flexDirection: 'row',
@@ -332,28 +425,39 @@ const styles = StyleSheet.create({
   petAnimationWrapper: {
     alignItems: 'center',
     marginBottom: 20,
+    position: 'relative',
+    overflow: 'hidden',
   },
   petBackground: {
-    width: screenWidth * 0.6,
-    height: screenWidth * 0.6,
-    backgroundColor: '#E8F5E9',
-    borderRadius: screenWidth * 0.3,
+    width: screenWidth * 0.45,
+    height: screenWidth * 0.45,
+    backgroundColor: '#E1F5FE',
+    borderRadius: screenWidth * 0.225,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 3,
-    borderColor: colors.primary + '20',
+    marginBottom: 30,
+    marginTop: 40,
+    borderWidth: 2,
+    borderColor: '#B3E5FC',
   },
   petAnimation: {
     width: '90%',
     height: '90%',
   },
+  petAnimationDuck: {
+    width: '110%',
+    height: '110%',
+  },
+  petAnimationTurtle: {
+    width: '100%',
+    height: '100%',
+  },
   bubble: {
     position: 'absolute',
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    backgroundColor: 'rgba(144, 202, 249, 0.5)',
     borderRadius: 50,
     borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.3)',
+    borderColor: 'rgba(100, 181, 246, 0.7)',
   },
   petStats: {
     width: '100%',
@@ -393,7 +497,29 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingHorizontal: 20,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  detailButton: {
+    backgroundColor: colors.primary,
+  },
   shopButton: {
-    width: '100%',
+    backgroundColor: colors.primary,
+  },
+  buttonText: {
+    ...typography.body,
+    color: colors.white,
+    fontWeight: '600',
   },
 });
