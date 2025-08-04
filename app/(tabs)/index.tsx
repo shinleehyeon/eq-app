@@ -7,103 +7,71 @@ import {
   Image, 
   TouchableOpacity,
   SafeAreaView,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions,
+  Animated
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useRouter } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
-import { useQuestsStore } from '@/store/challenges-store';
-import QuestCard from '@/components/ChallengeCard';
 import Button from '@/components/Button';
-import { Award, Calendar, ChevronRight, Leaf } from 'lucide-react-native';
-import { getDatabase, ref, set } from 'firebase/database';
-import { getAuth } from 'firebase/auth';
-import { User } from '@/types';
+import { Award, Calendar, Leaf } from 'lucide-react-native';
+import LottieView from 'lottie-react-native';
 
-interface HomeScreenData {
-  title: string;
-  description: string;
-  featuredQuests: any[];
-}
+const { width: screenWidth } = Dimensions.get('window');
 
-interface OpenQuest {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  createdAt: string;
-  category: string;
-  difficulty: string;
-  isCreativeChallenge: boolean;
-  points: number;
-  userId: string; // ID of the author
-}
+// Bubble Animation Component
+const AnimatedBubble = ({ size, position, delay = 0 }) => {
+  const animatedValue = React.useRef(new Animated.Value(0)).current;
 
-const saveHomeScreenDataToFirebase = async (data: HomeScreenData) => {
-  try {
-    const database = getDatabase();
-    const homeScreenRef = ref(database, 'homeScreenData');
-    await set(homeScreenRef, data);
-    console.log('Home screen data saved to Firebase successfully.');
-  } catch (error) {
-    console.error('Error saving home screen data to Firebase:', error);
-  }
-};
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 2000 + delay * 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 2000 + delay * 500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
-const fetchUserDataFromFirebase = async (userId: string) => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -10],
+  });
 
-    if (user && user.uid === userId) {
-      // Create a full User object with required fields
-      return {
-        id: user.uid,
-        email: user.email || '',
-        name: user.displayName || 'Guest User',
-        avatar: user.avatar,
-        level: 1,
-        streak: 0,
-        completedQuests: [],
-        badges: [],
-        plants: [],
-        followers: [],
-        following: [],
-        settings: {
-          notifications: true,
-          darkMode: false,
-          language: 'en',
-          privateProfile: false,
-          hideEmail: false,
-          hideAuthoredQuests: false,
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.3, 0.6, 0.3],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.bubble,
+        {
+          width: size,
+          height: size,
+          ...position,
+          transform: [{ translateY }],
+          opacity,
         },
-        emailVerified: user.emailVerified,
-        lastLoginAt: user.metadata.lastSignInTime,
-        createdAt: user.metadata.creationTime,
-      };
-    } else {
-      console.error('No user data found in Firebase Authentication.');
-      return null;
-    }
-  } catch (error) {
-    console.error('Error fetching user data from Firebase Authentication:', error);
-    return null;
-  }
+      ]}
+    />
+  );
 };
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user, initializeUser } = useUserStore();
-  const { 
-    dailyQuests, 
-    openQuests, 
-    activeQuests, 
-    fetchDailyQuests, 
-    fetchOpenQuests, 
-    isLoading: questsLoading 
-  } = useQuestsStore();
   const [isInitializing, setIsInitializing] = useState(true);
   
   useEffect(() => {
@@ -122,58 +90,9 @@ export default function HomeScreen() {
 
     ensureUserInitialization();
   }, []);
-
-  useEffect(() => {
-    const fetchUserStats = async () => {
-      try {
-        const userId = user?.id;
-        if (!userId) return;
-        
-        const userData = await fetchUserDataFromFirebase(userId);
-        if (userData) {
-          useUserStore.getState().setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      }
-    };
-
-    if (user?.id) {
-      fetchUserStats();
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        // Fetch both daily and open quests
-        await Promise.all([
-          fetchDailyQuests(),
-          fetchOpenQuests()
-        ]);
-      } catch (error) {
-        console.error('Error initializing app:', error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    
-    initApp();
-  }, []);
-
-  useEffect(() => {
-    const mockupData = {
-      // Replace with actual mockup data from the home screen
-      title: 'Welcome to EcoQuest',
-      description: 'Complete quests and grow your garden!',
-      featuredQuests: dailyQuests?.slice(0, 3) || [], // Example: top 3 quests
-    };
-
-    // saveHomeScreenDataToFirebase(mockupData);
-  }, [dailyQuests]);
   
-  // Don't render anything until both quests and activeQuests are ready
-  if (isInitializing || questsLoading) {
+  // Don't render anything until initialization is complete
+  if (isInitializing) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -208,25 +127,6 @@ export default function HomeScreen() {
   const badges = currentUser?.badges || [];
   const completedQuests = currentUser?.completedQuests || [];
   
-  // Get all quests (daily and open)
-  const allQuests = [...(dailyQuests || []), ...(openQuests || [])];
-  
-  // Get user's active quests
-  const userActiveQuests = allQuests.filter(quest => 
-    quest && activeQuests?.includes(quest.id)
-  );
-  
-  // Get recommended quests from daily quests that aren't active or completed
-  const recommendedQuests = (dailyQuests || [])
-    .filter(quest => 
-      quest && 
-      activeQuests && 
-      completedQuests && 
-      !activeQuests.includes(quest.id) && 
-      !completedQuests.includes(quest.id)
-    )
-    .slice(0, 2);
-
   // Profile image handling
   const defaultAvatar = require('@/assets/images/default-avatar.png');
   const avatarSource = currentUser?.avatar ? { uri: currentUser.avatar } : defaultAvatar;
@@ -279,85 +179,52 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Active Quests */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Quests</Text>
-            <TouchableOpacity 
-              style={styles.seeAllButton}
-              onPress={() => router.push('/quests')}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-              <ChevronRight size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          
-          {userActiveQuests.length > 0 ? (
-            userActiveQuests.map(quest => {
-              // Determine if this is a daily quest or an open quest
-              const isDailyQuest = dailyQuests.some(q => q.id === quest.id);
-              
-              return (
-                <QuestCard 
-                  key={quest.id}
-                  challenge={quest}
-                  isActive={true}
-                  onPress={() => {
-                    // Route based on quest type
-                    if (isDailyQuest) {
-                      router.push(`/challenge-detail/${quest.id}`);
-                    } else {
-                      router.push(`/creative-challenge/${quest.id}`);
-                    }
-                  }}
-                  showAuthor={!isDailyQuest} // Only show author for open quests
+        {/* Pet Section */}
+        <View style={styles.petSection}>
+          <View style={styles.petCard}>
+            <View style={styles.petHeader}>
+              <Text style={styles.sectionTitle}>Your Eco Pet</Text>
+            </View>
+            
+            {/* Pet Animation */}
+            <View style={styles.petAnimationWrapper}>
+              <View style={styles.petBackground}>
+                {/* Bubble Animations */}
+                <AnimatedBubble size={20} position={{ top: '10%', left: '15%' }} delay={0} />
+                <AnimatedBubble size={15} position={{ top: '20%', right: '20%' }} delay={1} />
+                <AnimatedBubble size={25} position={{ bottom: '15%', left: '10%' }} delay={2} />
+                <AnimatedBubble size={18} position={{ bottom: '25%', right: '15%' }} delay={3} />
+                <AnimatedBubble size={12} position={{ top: '40%', left: '5%' }} delay={4} />
+                
+                <LottieView
+                  source={require('@/assets/animation/turtle.json')}
+                  autoPlay
+                  loop
+                  style={styles.petAnimation}
                 />
-              );
-            })
-          ) : (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>
-                You don't have any active quests.
-              </Text>
-              <Button 
-                title="Find Quests" 
-                onPress={() => router.push('/quests')}
-                style={styles.emptyStateButton}
-              />
+              </View>
+              
+              {/* Pet Status Bars */}
+              <View style={styles.petStats}>
+                <View style={styles.statBar}>
+                  <Text style={styles.statBarLabel}>Growth</Text>
+                  <View style={styles.statBarTrack}>
+                    <View style={[styles.statBarFill, { width: '60%', backgroundColor: colors.primary }]} />
+                  </View>
+                </View>
+              </View>
             </View>
-          )}
-        </View>
-        
-        {/* Recommended Quests - Daily Quests */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recommended For You</Text>
+            
+            {/* Shop Button */}
+            <Button
+              title="Visit Pet Shop"
+              onPress={() => {
+                // Navigation will be added later
+                console.log('Navigate to shop');
+              }}
+              style={styles.shopButton}
+            />
           </View>
-          
-          {recommendedQuests.length > 0 ? (
-            recommendedQuests.map(quest => (
-              <QuestCard 
-                key={quest.id}
-                challenge={quest}
-                isActive={activeQuests.includes(quest.id)}
-                onPress={(quest) => router.push(`/challenge-detail/${quest.id}`)}
-                showAuthor={true}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>
-                No daily quests available at the moment.
-              </Text>
-            </View>
-          )}
-          
-          <Button 
-            title="Explore All Quests" 
-            variant="outline"
-            onPress={() => router.push('/quests')}
-            style={styles.exploreButton}
-          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -430,43 +297,103 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
   },
-  sectionContainer: {
+  petSection: {
     padding: 16,
   },
-  sectionHeader: {
+  petCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    elevation: 8,
+  },
+  petHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
   sectionTitle: {
     ...typography.heading3,
+    color: colors.text,
   },
-  seeAllButton: {
-    flexDirection: 'row',
+  petBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  petBadgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: 'bold',
+  },
+  petAnimationWrapper: {
     alignItems: 'center',
+    marginBottom: 20,
   },
-  seeAllText: {
-    ...typography.bodySmall,
+  petBackground: {
+    width: screenWidth * 0.6,
+    height: screenWidth * 0.6,
+    backgroundColor: '#E8F5E9',
+    borderRadius: screenWidth * 0.3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: colors.primary + '20',
+  },
+  petAnimation: {
+    width: '90%',
+    height: '90%',
+  },
+  bubble: {
+    position: 'absolute',
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+  },
+  petStats: {
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  statBar: {
+    marginBottom: 12,
+  },
+  statBarLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  statBarTrack: {
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  statBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  petInfo: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  petName: {
+    ...typography.heading2,
     color: colors.primary,
-    fontWeight: '600',
+    marginBottom: 8,
   },
-  emptyStateContainer: {
-    backgroundColor: colors.card,
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    ...typography.body,
+  petMessage: {
+    ...typography.bodySmall,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 16,
+    fontStyle: 'italic',
+    paddingHorizontal: 20,
   },
-  emptyStateButton: {
-    minWidth: 150,
-  },
-  exploreButton: {
-    marginTop: 8,
+  shopButton: {
+    width: '100%',
   },
 });
