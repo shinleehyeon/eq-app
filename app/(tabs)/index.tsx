@@ -17,7 +17,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle } from 'lucide-react-native';
+import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle, Route } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -325,6 +325,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <View style={styles.marathonStatusContainer}>
+          <View style={styles.marathonStatusInfo}>
+            <View style={styles.marathonStatusHeader}>
+              <Route size={16} color={colors.primary} />
+              <Text style={styles.marathonStatusTitle}>Eco Marathon Challenge</Text>
+            </View>
+            <View style={styles.marathonStatusFooter}>
+              <View style={styles.marathonStatusDot} />
+              <Text style={styles.marathonStatusText}>참여중</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.petSection}>
           <View style={styles.petCard}>
             <View style={styles.petHeader}>
@@ -504,13 +517,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     padding: 16,
     marginBottom: 8,
-    marginHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  questStatsContainer: {
-    backgroundColor: colors.card,
     marginHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
@@ -824,5 +830,49 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     textAlign: 'right',
+  },
+  marathonStatusContainer: {
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  marathonStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  marathonStatusInfo: {
+    flex: 1,
+  },
+  marathonStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+    marginRight: 6,
+    marginTop: 3,
+  },
+  marathonStatusTitle: {
+    ...typography.bodySmall,
+    color: colors.text,
+    fontWeight: '600',
+    marginLeft: 6,
+    flex: 1,
+  },
+  marathonStatusFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  marathonStatusText: {
+    ...typography.caption,
+    color: colors.success,
+    marginLeft: 0,
+    fontWeight: '600',
   },
 });

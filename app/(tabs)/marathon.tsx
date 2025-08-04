@@ -108,6 +108,20 @@ export default function MarathonScreen() {
       />
       
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        <View style={styles.marathonInfoCard}>
+          <Text style={styles.marathonTitle}>Eco Marathon Challenge</Text>
+          <View style={styles.dateContainer}>
+            <View style={styles.dateItem}>
+              <Text style={styles.dateLabel}>Start Date</Text>
+              <Text style={styles.dateValue}>Jan 1, 2025</Text>
+            </View>
+            <View style={styles.dateItem}>
+              <Text style={styles.dateLabel}>End Date</Text>
+              <Text style={styles.dateValue}>Jan 31, 2025</Text>
+            </View>
+          </View>
+        </View>
+        
         <View style={styles.marathonCard}>
           <View style={styles.marathonContainer}>
             <Svg width={width - 80} height={520} style={styles.svgContainer}>
@@ -481,5 +495,45 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.warning,
     fontWeight: '600',
+  },
+  marathonInfoCard: {
+    backgroundColor: colors.card,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 10,
+    shadowColor: colors.border,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  marathonTitle: {
+    ...typography.heading2,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '700',
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  dateItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  dateLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: 4,
+    fontWeight: '600',
+  },
+  dateValue: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: '700',
   },
 });
