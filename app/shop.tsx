@@ -54,7 +54,7 @@ const pets: Pet[] = [
   },
   {
     id: 'duck',
-    name: 'Eco Duck',
+    name: 'Oceande Duck',
     price: 100,
     description: 'A cheerful duck that loves keeping the environment clean!',
     animationSource: require('@/assets/animation/duck.json'),
