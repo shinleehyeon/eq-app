@@ -16,9 +16,8 @@ import { useQuestsStore } from '@/store/challenges-store';
 import SubmissionCard from '@/components/SubmissionCard';
 import Button from '@/components/Button';
 import { Award, FileImage, Plus, Users, Heart, MessageCircle } from 'lucide-react-native';
-import { database } from '@/config/firebase';
-import { ref, get } from 'firebase/database';
-import { fetchAuthorById } from '@/utils/firebase-helpers';
+import mockCreativeChallenges from '@/mocks/creative-challenges';
+import mockCreativeSubmissions from '@/mocks/creative-submissions';
 import QuestCard from '@/components/QuestCard'; // Use the correct QuestCard component
 
 // Define a type for submissions from Firebase
@@ -68,45 +67,47 @@ export default function CreativeScreen() {
   } = useQuestsStore();
 
   
-  // Fetch top submissions from Firebase
+  // Fetch top submissions from mock data
   useEffect(() => {
     const fetchTopSubmissions = async () => {
       setIsLoading(true);
       try {
-        console.log('Fetching top submissions from Firebase');
-        const submissionsRef = ref(database, 'questSubmissions');
-        const snapshot = await get(submissionsRef);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        if (snapshot.exists()) {
-          // Convert Firebase object to array
-          const submissionsData = snapshot.val();
-          const submissionsArray = Object.keys(submissionsData).map(key => ({
-            id: key,
-            ...submissionsData[key]
-          }));
-          
-          // Sort by likes (highest first)
-          const sortedSubmissions = submissionsArray.sort((a, b) => 
-            (b.likes || 0) - (a.likes || 0)
-          );
-          
-          // Take only the top 3
-          const top3Submissions = sortedSubmissions.slice(0, 3);
-          console.log('Top 3 submissions:', top3Submissions);
-          
-          setTopSubmissions(top3Submissions);
-          
-          // Fetch author data for submissions
-          const authorIds = new Set(top3Submissions.map(submission => submission.userId));
-          authorIds.forEach(authorId => {
-            if (authorId && !authors[authorId]) {
-              fetchAuthorData(authorId);
-            }
-          });
-        } else {
-          console.log('No submissions found');
-          setTopSubmissions([]);
-        }
+        // Use mock data
+        const submissionsArray = mockCreativeSubmissions.map(submission => ({
+          id: submission.id,
+          title: submission.title,
+          description: submission.description,
+          mediaUrl: submission.imageUrl,
+          userId: submission.userId,
+          questId: submission.challengeId || submission.id,
+          likes: submission.votes || 0,
+          createdAt: submission.submissionDate,
+          badgeCount: submission.votes || 0,
+          comments: submission.comments
+        }));
+        
+        // Sort by likes (highest first)
+        const sortedSubmissions = submissionsArray.sort((a, b) => 
+          (b.likes || 0) - (a.likes || 0)
+        );
+        
+        // Take only the top 3
+        const top3Submissions = sortedSubmissions.slice(0, 3);
+        
+        setTopSubmissions(top3Submissions);
+        
+        // Set mock author data
+        const mockAuthors: Record<string, Author> = {
+          'user456': { id: 'user456', name: 'Maya Johnson', avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956' },
+          'user789': { id: 'user789', name: 'Jamal Wilson', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d' },
+          'user101': { id: 'user101', name: 'Sophia Chen', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2' },
+          'user202': { id: 'user202', name: 'Liam Rodriguez', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e' },
+          'user303': { id: 'user303', name: 'Emma Taylor', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80' }
+        };
+        setAuthors(mockAuthors);
       } catch (error) {
         console.error('Error fetching submissions:', error);
         setTopSubmissions([]);
@@ -118,47 +119,41 @@ export default function CreativeScreen() {
     fetchTopSubmissions();
   }, []);
   
-  // Fetch open quests from Firebase
+  // Fetch open quests from mock data
   useEffect(() => {
     const fetchOpenQuests = async () => {
       setIsLoadingQuests(true);
       try {
-        console.log('Fetching latest open quests');
-        const questsRef = ref(database, 'openQuests');
-        const snapshot = await get(questsRef);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        if (snapshot.exists()) {
-          // Convert Firebase object to array
-          const questsData = snapshot.val();
-          const questsArray = Object.keys(questsData).map(key => ({
-            id: key,
-            ...questsData[key]
-          }));
-          
-          // Sort by createdAt (newest first)
-          const sortedQuests = questsArray.sort((a, b) => {
+        // Use mock creative challenges
+        const questsArray = mockCreativeChallenges.filter(challenge => 
+          challenge.isCreativeChallenge
+        ).map(challenge => ({
+          id: challenge.id,
+          title: challenge.title,
+          description: challenge.description,
+          imageUrl: challenge.imageUrl,
+          createdAt: challenge.submissionDeadline || new Date().toISOString(),
+          category: challenge.category,
+          difficulty: challenge.difficulty,
+          isCreativeChallenge: true,
+          points: challenge.points,
+          authorId: 'system'
+        }));
+        
+        // Sort by createdAt (newest first)
+        const sortedQuests = questsArray.sort((a, b) => {
             const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
             const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return dateB - dateA;
           });
           
-          // Take only the 3 latest quests
-          const latestQuests = sortedQuests.slice(0, 3);
-          console.log('Latest 3 open quests:', latestQuests);
-          
-          setOpenQuests(latestQuests);
-          
-          // Fetch author data for quests
-          const authorIds = new Set(latestQuests.map(quest => quest.authorId || quest.userId));
-          authorIds.forEach(authorId => {
-            if (authorId && !authors[authorId]) {
-              fetchAuthorData(authorId);
-            }
-          });
-        } else {
-          console.log('No open quests found');
-          setOpenQuests([]);
-        }
+        // Take only the 3 latest quests
+        const latestQuests = sortedQuests.slice(0, 3);
+        
+        setOpenQuests(latestQuests);
       } catch (error) {
         console.error('Error fetching open quests:', error);
         setOpenQuests([]);
@@ -169,21 +164,6 @@ export default function CreativeScreen() {
     
     fetchOpenQuests();
   }, []);
-  
-  // Helper function to fetch author data
-  const fetchAuthorData = async (authorId: string) => {
-    try {
-      const authorData = await fetchAuthorById(authorId);
-      if (authorData) {
-        setAuthors(prev => ({
-          ...prev,
-          [authorId]: authorData
-        }));
-      }
-    } catch (error) {
-      console.error(`Error fetching author ${authorId}:`, error);
-    }
-  };
   
   return (
     <SafeAreaView style={styles.container}>

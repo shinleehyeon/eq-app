@@ -14,7 +14,7 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import EcoTipCard from '@/components/EcoTipCard';
 import { BookOpen, Lightbulb, Video, Plus } from 'lucide-react-native';
-import { apiClient } from '@/lib/api/client';
+import mockEcoTips from '@/mocks/eco-tips';
 import { useUserStore } from '@/store/user-store';
 
 export default function LearnScreen() {
@@ -34,46 +34,49 @@ export default function LearnScreen() {
       setIsLoadingMore(true);
     }
 
-
-          try {
-        console.log('Fetching learning list for type:', selectedType);
-        const response = await apiClient.getLearningList(
-          selectedType,
-          pageNum,
-          10,
-          accessToken ?? undefined
-        );
-        console.log('Learning list response:', response);
-
-        if (response.success && response.data) {
-          const items = response.data.data || [];  // Changed from response.data.items
-          // Transform API data to match EcoTipCard format if needed
-          const transformedItems = items.map((item: any) => {
-            return {
-              ...item,
-              id: item.uuid || item.id,
-              imageUrl: item.thumbnail || 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=EcoTip',
-              source: item.links?.[0] || '',
-              type: item.category || selectedType,
-              userId: item.authorId || 'unknown',
-              isDeleted: 'false'
-            };
-          });
-          if (append) {
-            setLearnContent(prev => [...prev, ...transformedItems]);
-          } else {
-            setLearnContent(transformedItems);
-          }
-          setHasMore(response.data.pagination?.hasNext || false);  // Changed from response.data.hasMore
-          setPage(pageNum);
-        } else {
-        console.error('Failed to fetch learning content:', response.error);
-        if (!append) {
-          setLearnContent([]);
-        }
+    try {
+      // Use mock data instead of API
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      
+      let filteredItems = mockEcoTips;
+      
+      // Filter by selected type
+      if (selectedType === 'eco_tips') {
+        filteredItems = mockEcoTips.filter(tip => tip.resourceType === 'eco tip');
+      } else if (selectedType === 'articles') {
+        filteredItems = mockEcoTips.filter(tip => tip.resourceType === 'article');
+      } else if (selectedType === 'videos') {
+        filteredItems = mockEcoTips.filter(tip => tip.resourceType === 'video' || tip.videoLink);
       }
+      
+      // Simulate pagination
+      const itemsPerPage = 10;
+      const startIndex = (pageNum - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedItems = filteredItems.slice(startIndex, endIndex);
+      
+      // Transform mock data to match EcoTipCard format
+      const transformedItems = paginatedItems.map(item => ({
+        ...item,
+        source: item.source || '',
+        type: item.category || selectedType,
+        userId: 'unknown',
+        isDeleted: 'false'
+      }));
+      
+      if (append) {
+        setLearnContent(prev => [...prev, ...transformedItems]);
+      } else {
+        setLearnContent(transformedItems);
+      }
+      
+      setHasMore(endIndex < filteredItems.length);
+      setPage(pageNum);
     } catch (error) {
       console.error('Error fetching learn content:', error);
+      if (!append) {
+        setLearnContent([]);
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);

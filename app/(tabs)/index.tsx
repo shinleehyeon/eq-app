@@ -278,7 +278,7 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-        
+
         {/* Active Quests */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>

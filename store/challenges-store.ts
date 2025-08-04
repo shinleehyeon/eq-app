@@ -2,13 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Quest, QuestCategory } from '@/types';
-import { 
-  getDailyQuests, 
-  getOpenQuests, 
-  getDailyQuest, 
-  getOpenQuest, 
-  createOpenQuest 
-} from '@/utils/firebase-helpers';
+import mockChallenges from '@/mocks/challenges';
 
 interface QuestsState {
   dailyQuests: Quest[];
@@ -46,7 +40,8 @@ export const useQuestsStore = create<QuestsState>()(
       fetchDailyQuests: async () => {
         set({ isLoading: true, error: null });
         try {
-          const dailyQuests = await getDailyQuests() as Quest[];
+          // Use mock data instead of API
+          const dailyQuests = mockChallenges.slice(0, 4) as Quest[];
           const validQuests = dailyQuests.map(quest => ({
             ...quest,
             difficulty: quest.difficulty || 'medium',
@@ -67,7 +62,8 @@ export const useQuestsStore = create<QuestsState>()(
       fetchOpenQuests: async () => {
         set({ isLoading: true, error: null });
         try {
-          const openQuests = await getOpenQuests() as Quest[];
+          // Use mock data instead of API
+          const openQuests = mockChallenges.slice(4) as Quest[];
           const validQuests = openQuests.map(quest => ({
             ...quest,
             difficulty: quest.difficulty || 'medium',
@@ -86,12 +82,12 @@ export const useQuestsStore = create<QuestsState>()(
       },
 
       startQuest: async (questId, completed = false) => {
-        const { activeQuests, completedQuests } = get();
+        const { activeQuests, completedQuests, dailyQuests, openQuests } = get();
         if (activeQuests.includes(questId)) return;
         
         try {
-          // Try both daily and open quests
-          const quest = await getDailyQuest(questId) || await getOpenQuest(questId);
+          // Find quest in mock data
+          const quest = [...dailyQuests, ...openQuests].find(q => q.id === questId);
           if (!quest) {
             throw new Error('Quest not found');
           }
@@ -116,7 +112,15 @@ export const useQuestsStore = create<QuestsState>()(
 
       createQuest: async (quest) => {
         try {
-          return await createOpenQuest(quest);
+          // Create quest locally with mock data
+          const newQuest = {
+            ...quest,
+            id: `quest_${Date.now()}`,
+          };
+          set(state => ({
+            openQuests: [...state.openQuests, newQuest as Quest]
+          }));
+          return newQuest.id;
         } catch (error) {
           set({ 
             error: error instanceof Error ? error.message : 'Failed to create quest' 
