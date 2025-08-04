@@ -180,7 +180,7 @@ export default function ShopScreen() {
     if (userCoins >= pet.price) {
       setUserCoins(userCoins - pet.price);
       setOwnedPets([...ownedPets, pet.id]);
-      setCurrentPet(pet.id); // 구매 후 자동으로 해당 펫 선택
+      setCurrentPet(pet.id);
       console.log('Purchased and selected pet:', pet.name);
     }
     setSelectedPet(null);
@@ -389,7 +389,6 @@ export default function ShopScreen() {
         )}
       </ScrollView>
 
-      {/* Pet Detail Modal */}
       <Modal
         visible={selectedPet !== null}
         transparent
@@ -455,7 +454,6 @@ export default function ShopScreen() {
         </View>
       </Modal>
 
-      {/* Item Detail Modal */}
       <Modal
         visible={selectedItem !== null}
         transparent

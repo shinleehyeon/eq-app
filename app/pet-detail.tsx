@@ -56,7 +56,6 @@ export default function PetDetailScreen() {
     { id: 'water_wheel', name: 'Water Wheel', icon: '🎡', count: 1 },
   ]);
 
-  // Get animation source based on selected pet
   const getAnimationSource = () => {
     switch(selectedPet) {
       case 'turtle':
@@ -71,7 +70,6 @@ export default function PetDetailScreen() {
     }
   };
 
-  // Mock pet data based on selected pet
   const getPetData = (): PetData => {
     switch(selectedPet) {
       case 'turtle':
@@ -196,7 +194,6 @@ export default function PetDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Pet Animation */}
         <View style={styles.petContainer}>
           <LottieView
             source={getAnimationSource()}
@@ -204,7 +201,6 @@ export default function PetDetailScreen() {
             loop
             style={styles.petAnimation}
           />
-          {/* Love Animation Overlay */}
           {showLoveAnimation && (
             <View style={styles.loveAnimationContainer}>
               <LottieView
@@ -217,13 +213,11 @@ export default function PetDetailScreen() {
           )}
         </View>
 
-        {/* Pet Info */}
         <View style={styles.petInfoSection}>
           <Text style={styles.petName}>{currentPet.name}</Text>
           <Text style={styles.petPersonality}>{currentPet.personality}</Text>
         </View>
 
-        {/* Action Buttons - Moved Above Stats */}
         <View style={styles.actionsSection}>
           <View style={styles.actionsRow}>
             <TouchableOpacity 
@@ -292,7 +286,6 @@ export default function PetDetailScreen() {
           </View>
         </View>
 
-        {/* Pet Stats */}
         <View style={styles.statsSection}>
           <View style={styles.statRow}>
             <View style={styles.statItem}>
@@ -321,7 +314,6 @@ export default function PetDetailScreen() {
           </View>
         </View>
 
-        {/* Pet Details */}
         <View style={styles.detailsSection}>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Abilities:</Text>

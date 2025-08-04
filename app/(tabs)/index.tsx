@@ -147,7 +147,6 @@ export default function HomeScreen() {
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef(null);
   
-  // Get animation source based on selected pet
   const getAnimationSource = () => {
     switch(selectedPet) {
       case 'turtle':
@@ -162,7 +161,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Mock pet data based on selected pet
   const getPetData = () => {
     switch(selectedPet) {
       case 'turtle':
@@ -396,8 +394,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-      
-      {/* Pet Details Modal */}
+            
       <Modal
         visible={showPetModal}
         transparent
