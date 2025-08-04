@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
-  Alert
+  Alert,
+  Animated
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import colors from '@/constants/colors';
@@ -31,11 +32,29 @@ interface PetData {
   birthdate: string;
 }
 
+interface OwnedItem {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
+}
+
 export default function PetDetailScreen() {
   const router = useRouter();
   const { selectedPet, user } = useUserStore();
-  const [foodCount, setFoodCount] = useState(5);
-  const [toyCount, setToyCount] = useState(3);
+  const [expandedCard, setExpandedCard] = useState<'feed' | 'play' | null>(null);
+  const [petStats, setPetStats] = useState({ happiness: 85, hunger: 30 });
+  const [showLoveAnimation, setShowLoveAnimation] = useState(false);
+  const [foodItems, setFoodItems] = useState<OwnedItem[]>([
+    { id: 'seaweed', name: 'Fresh Seaweed', icon: '🌿', count: 3 },
+    { id: 'eco_berries', name: 'Eco Berries', icon: '🫐', count: 2 },
+    { id: 'organic_seeds', name: 'Organic Seeds', icon: '🌰', count: 1 },
+  ]);
+  const [toyItems, setToyItems] = useState<OwnedItem[]>([
+    { id: 'eco_ball', name: 'Eco Ball', icon: '⚽', count: 2 },
+    { id: 'puzzle_tree', name: 'Puzzle Tree', icon: '🌳', count: 1 },
+    { id: 'water_wheel', name: 'Water Wheel', icon: '🎡', count: 1 },
+  ]);
 
   // Get animation source based on selected pet
   const getAnimationSource = () => {
@@ -60,8 +79,8 @@ export default function PetDetailScreen() {
           name: 'Sea Turtle',
           level: 5,
           experience: 60,
-          happiness: 85,
-          hunger: 30,
+          happiness: petStats.happiness,
+          hunger: petStats.hunger,
           abilities: ['Ocean Protection', 'Plastic Cleanup'],
           personality: 'Wise and calm',
           favoriteFood: 'Seaweed',
@@ -72,8 +91,8 @@ export default function PetDetailScreen() {
           name: 'Sky Guardian',
           level: 4,
           experience: 45,
-          happiness: 90,
-          hunger: 25,
+          happiness: petStats.happiness,
+          hunger: petStats.hunger,
           abilities: ['Air Quality Monitor', 'Eco-awareness'],
           personality: 'Graceful and alert',
           favoriteFood: 'Seeds',
@@ -84,8 +103,8 @@ export default function PetDetailScreen() {
           name: 'Forest Giant',
           level: 7,
           experience: 80,
-          happiness: 75,
-          hunger: 40,
+          happiness: petStats.happiness,
+          hunger: petStats.hunger,
           abilities: ['Tree Protection', 'Forest Care'],
           personality: 'Gentle and caring',
           favoriteFood: 'Leaves',
@@ -97,8 +116,8 @@ export default function PetDetailScreen() {
           name: 'Ocean Duck',
           level: 5,
           experience: 60,
-          happiness: 85,
-          hunger: 30,
+          happiness: petStats.happiness,
+          hunger: petStats.hunger,
           abilities: ['Water Conservation', 'Ocean Cleanup'],
           personality: 'Playful and energetic',
           favoriteFood: 'Seaweed Snacks',
@@ -108,23 +127,54 @@ export default function PetDetailScreen() {
   };
 
   const currentPet = getPetData();
+  const totalFood = foodItems.reduce((sum, item) => sum + item.count, 0);
+  const totalToys = toyItems.reduce((sum, item) => sum + item.count, 0);
 
-  const handleFeedPet = () => {
-    if (foodCount > 0) {
-      setFoodCount(foodCount - 1);
-      Alert.alert('Success!', `${currentPet.name} enjoyed the food! Happiness increased!`);
-    } else {
-      Alert.alert('No Food', 'You need to buy food from the shop first!');
+  const showLoveEffect = () => {
+    setShowLoveAnimation(true);
+    setTimeout(() => {
+      setShowLoveAnimation(false);
+    }, 2000);
+  };
+
+  const handleFeedPet = (item: OwnedItem) => {
+    if (item.count > 0) {
+      setFoodItems(prev => 
+        prev.map(food => 
+          food.id === item.id 
+            ? { ...food, count: food.count - 1 }
+            : food
+        )
+      );
+      setPetStats(prev => ({
+        ...prev,
+        hunger: Math.max(0, prev.hunger - 15)
+      }));
+      showLoveEffect();
+      setExpandedCard(null);
     }
   };
 
-  const handlePlayWithPet = () => {
-    if (toyCount > 0) {
-      setToyCount(toyCount - 1);
-      Alert.alert('Success!', `${currentPet.name} had fun playing! Energy increased!`);
-    } else {
-      Alert.alert('No Toys', 'You need to buy toys from the shop first!');
+  const handlePlayWithPet = (item: OwnedItem) => {
+    if (item.count > 0) {
+      setToyItems(prev => 
+        prev.map(toy => 
+          toy.id === item.id 
+            ? { ...toy, count: toy.count - 1 }
+            : toy
+        )
+      );
+      setPetStats(prev => ({
+        ...prev,
+        happiness: Math.min(100, prev.happiness + 10)
+      }));
+      showLoveEffect();
+      setExpandedCard(null);
     }
+  };
+
+  const toggleCard = (cardType: 'feed' | 'play') => {
+    setExpandedCard(expandedCard === cardType ? null : cardType);
   };
 
   return (
@@ -154,12 +204,92 @@ export default function PetDetailScreen() {
             loop
             style={styles.petAnimation}
           />
+          {/* Love Animation Overlay */}
+          {showLoveAnimation && (
+            <View style={styles.loveAnimationContainer}>
+              <LottieView
+                source={require('@/assets/animation/love.json')}
+                autoPlay
+                loop={false}
+                style={styles.loveAnimation}
+              />
+            </View>
+          )}
         </View>
 
         {/* Pet Info */}
         <View style={styles.petInfoSection}>
           <Text style={styles.petName}>{currentPet.name}</Text>
           <Text style={styles.petPersonality}>{currentPet.personality}</Text>
+        </View>
+
+        {/* Action Buttons - Moved Above Stats */}
+        <View style={styles.actionsSection}>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity 
+              style={[styles.actionCard, expandedCard === 'feed' && styles.expandedCard]}
+              onPress={() => toggleCard('feed')}
+            >
+              <View style={styles.actionHeader}>
+                <Apple size={24} color={colors.success} />
+                <View style={styles.actionInfo}>
+                  <Text style={styles.actionTitle}>Feed Pet</Text>
+                  <Text style={styles.actionCount}>Items: {totalFood}</Text>
+                </View>
+              </View>
+              
+              {expandedCard === 'feed' && (
+                <View style={styles.itemsList}>
+                  {foodItems.filter(item => item.count > 0).map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.itemButton}
+                      onPress={() => handleFeedPet(item)}
+                    >
+                      <Text style={styles.itemIcon}>{item.icon}</Text>
+                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemCount}>×{item.count}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {foodItems.filter(item => item.count > 0).length === 0 && (
+                    <Text style={styles.emptyText}>No food available. Visit the shop!</Text>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.actionCard, expandedCard === 'play' && styles.expandedCard]}
+              onPress={() => toggleCard('play')}
+            >
+              <View style={styles.actionHeader}>
+                <Gamepad2 size={24} color={colors.primary} />
+                <View style={styles.actionInfo}>
+                  <Text style={styles.actionTitle}>Play with Pet</Text>
+                  <Text style={styles.actionCount}>Items: {totalToys}</Text>
+                </View>
+              </View>
+              
+              {expandedCard === 'play' && (
+                <View style={styles.itemsList}>
+                  {toyItems.filter(item => item.count > 0).map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.itemButton}
+                      onPress={() => handlePlayWithPet(item)}
+                    >
+                      <Text style={styles.itemIcon}>{item.icon}</Text>
+                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemCount}>×{item.count}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {toyItems.filter(item => item.count > 0).length === 0 && (
+                    <Text style={styles.emptyText}>No toys available. Visit the shop!</Text>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Pet Stats */}
@@ -207,40 +337,6 @@ export default function PetDetailScreen() {
           </View>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionsSection}>
-          <View style={styles.actionCard}>
-            <View style={styles.actionHeader}>
-              <Apple size={32} color={colors.success} />
-              <View style={styles.actionInfo}>
-                <Text style={styles.actionTitle}>Feed Pet</Text>
-                <Text style={styles.actionCount}>Food available: {foodCount}</Text>
-              </View>
-            </View>
-            <Button
-              title="Feed"
-              onPress={handleFeedPet}
-              disabled={foodCount === 0}
-              style={[styles.actionButton, { backgroundColor: colors.success }]}
-            />
-          </View>
-
-          <View style={styles.actionCard}>
-            <View style={styles.actionHeader}>
-              <Gamepad2 size={32} color={colors.primary} />
-              <View style={styles.actionInfo}>
-                <Text style={styles.actionTitle}>Play with Pet</Text>
-                <Text style={styles.actionCount}>Toys available: {toyCount}</Text>
-              </View>
-            </View>
-            <Button
-              title="Play"
-              onPress={handlePlayWithPet}
-              disabled={toyCount === 0}
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
-            />
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -274,10 +370,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: colors.border,
+    position: 'relative',
   },
   petAnimation: {
     width: 200,
     height: 200,
+  },
+  loveAnimationContainer: {
+    position: 'absolute',
+    top: 40,
+    right: 10,
+    zIndex: 10,
+  },
+  loveAnimation: {
+    width: 150,
+    height: 150,
   },
   petInfoSection: {
     alignItems: 'center',
@@ -370,34 +477,74 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   actionsSection: {
-    gap: 16,
+    marginBottom: 24,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   actionCard: {
+    flex: 1,
     backgroundColor: colors.card,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  expandedCard: {
+    flex: 2,
   },
   actionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
+    gap: 8,
   },
   actionInfo: {
     flex: 1,
   },
   actionTitle: {
-    ...typography.heading3,
+    ...typography.body,
     color: colors.text,
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
   actionCount: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.textSecondary,
   },
-  actionButton: {
-    width: '100%',
+  itemsList: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  itemButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    marginBottom: 8,
+    gap: 8,
+  },
+  itemIcon: {
+    fontSize: 20,
+  },
+  itemName: {
+    ...typography.bodySmall,
+    color: colors.text,
+    flex: 1,
+  },
+  itemCount: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontWeight: 'bold',
+  },
+  emptyText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    padding: 12,
   },
 });
