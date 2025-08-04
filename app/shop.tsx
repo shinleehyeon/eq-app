@@ -44,6 +44,15 @@ type TabType = 'pets' | 'food' | 'toys';
 
 const pets: Pet[] = [
   {
+    id: 'bird',
+    name: 'Sky Guardian',
+    price: 200,
+    description: 'A graceful bird that monitors air quality and spreads eco-awareness.',
+    animationSource: require('@/assets/animation/bird.json'),
+    rarity: 'common',
+    owned: true,
+  },
+  {
     id: 'duck',
     name: 'Eco Duck',
     price: 100,
@@ -60,15 +69,6 @@ const pets: Pet[] = [
     animationSource: require('@/assets/animation/turtle.json'),
     rarity: 'rare',
     owned: false,
-  },
-  {
-    id: 'bird',
-    name: 'Sky Guardian',
-    price: 200,
-    description: 'A graceful bird that monitors air quality and spreads eco-awareness.',
-    animationSource: require('@/assets/animation/bird.json'),
-    rarity: 'common',
-    owned: true,
   },
   {
     id: 'giraffe',
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.background,
     borderRadius: 25,
-    padding: 4,
+    padding: 6,
   },
   tab: {
     flex: 1,
@@ -788,13 +788,6 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
     elevation: 4,
   },
   tabText: {

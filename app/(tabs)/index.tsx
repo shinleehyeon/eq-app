@@ -463,7 +463,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Favorite Food:</Text>
-                <Text style={styles.detailValue}>{currentPet.favoriteFood}</Text>
+                <Text style={styles.detailValue}>{c9urrentPet.favoriteFood}</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Birthday:</Text>

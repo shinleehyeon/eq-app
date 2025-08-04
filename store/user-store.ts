@@ -38,7 +38,7 @@ export const useUserStore = create<UserState>()(
       accessToken: null,
       isLoading: false,
       error: null,
-      selectedPet: 'duck',
+      selectedPet: 'bird',
       
       initializeUser: async () => {
         try {

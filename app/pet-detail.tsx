@@ -45,6 +45,8 @@ export default function PetDetailScreen() {
   const [expandedCard, setExpandedCard] = useState<'feed' | 'play' | null>(null);
   const [petStats, setPetStats] = useState({ happiness: 85, hunger: 30 });
   const [showLoveAnimation, setShowLoveAnimation] = useState(false);
+  const feedAnimation = useRef(new Animated.Value(0)).current;
+  const playAnimation = useRef(new Animated.Value(0)).current;
   const [foodItems, setFoodItems] = useState<OwnedItem[]>([
     { id: 'seaweed', name: 'Fresh Seaweed', icon: '🌿', count: 3 },
     { id: 'eco_berries', name: 'Eco Berries', icon: '🫐', count: 2 },
@@ -136,6 +138,15 @@ export default function PetDetailScreen() {
   };
 
   const handleFeedPet = (item: OwnedItem) => {
+    if (petStats.hunger === 0) {
+      Alert.alert(
+        "Pet is Full!",
+        `${currentPet.name} is not hungry right now. Try playing with them instead!`,
+        [{ text: "OK" }]
+      );
+      return;
+    }
+    
     if (item.count > 0) {
       setFoodItems(prev => 
         prev.map(food => 
@@ -154,6 +165,15 @@ export default function PetDetailScreen() {
   };
 
   const handlePlayWithPet = (item: OwnedItem) => {
+    if (petStats.happiness === 100) {
+      Alert.alert(
+        "Pet is Very Happy!",
+        `${currentPet.name} is already at maximum happiness! Maybe try feeding them instead?`,
+        [{ text: "OK" }]
+      );
+      return;
+    }
+    
     if (item.count > 0) {
       setToyItems(prev => 
         prev.map(toy => 
@@ -172,7 +192,25 @@ export default function PetDetailScreen() {
   };
 
   const toggleCard = (cardType: 'feed' | 'play') => {
-    setExpandedCard(expandedCard === cardType ? null : cardType);
+    const isExpanding = expandedCard !== cardType;
+    const animation = cardType === 'feed' ? feedAnimation : playAnimation;
+    
+    if (isExpanding) {
+      setExpandedCard(cardType);
+      Animated.timing(animation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      Animated.timing(animation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start(() => {
+        setExpandedCard(null);
+      });
+    }
   };
 
   return (
@@ -225,7 +263,7 @@ export default function PetDetailScreen() {
               onPress={() => toggleCard('feed')}
             >
               <View style={styles.actionHeader}>
-                <Apple size={24} color={colors.success} />
+                <Apple size={24} color={colors.white} />
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Feed Pet</Text>
                   <Text style={styles.actionCount}>Items: {totalFood}</Text>
@@ -233,7 +271,16 @@ export default function PetDetailScreen() {
               </View>
               
               {expandedCard === 'feed' && (
-                <View style={styles.itemsList}>
+                <Animated.View style={[
+                  styles.itemsList,
+                  {
+                    opacity: feedAnimation,
+                    maxHeight: feedAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 300],
+                    }),
+                  }
+                ]}>
                   {foodItems.filter(item => item.count > 0).map((item) => (
                     <TouchableOpacity
                       key={item.id}
@@ -248,7 +295,7 @@ export default function PetDetailScreen() {
                   {foodItems.filter(item => item.count > 0).length === 0 && (
                     <Text style={styles.emptyText}>No food available. Visit the shop!</Text>
                   )}
-                </View>
+                </Animated.View>
               )}
             </TouchableOpacity>
 
@@ -257,7 +304,7 @@ export default function PetDetailScreen() {
               onPress={() => toggleCard('play')}
             >
               <View style={styles.actionHeader}>
-                <Gamepad2 size={24} color={colors.primary} />
+                <Gamepad2 size={24} color={colors.white} />
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Play with Pet</Text>
                   <Text style={styles.actionCount}>Items: {totalToys}</Text>
@@ -265,7 +312,16 @@ export default function PetDetailScreen() {
               </View>
               
               {expandedCard === 'play' && (
-                <View style={styles.itemsList}>
+                <Animated.View style={[
+                  styles.itemsList,
+                  {
+                    opacity: playAnimation,
+                    maxHeight: playAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 300],
+                    }),
+                  }
+                ]}>
                   {toyItems.filter(item => item.count > 0).map((item) => (
                     <TouchableOpacity
                       key={item.id}
@@ -280,7 +336,7 @@ export default function PetDetailScreen() {
                   {toyItems.filter(item => item.count > 0).length === 0 && (
                     <Text style={styles.emptyText}>No toys available. Visit the shop!</Text>
                   )}
-                </View>
+                </Animated.View>
               )}
             </TouchableOpacity>
           </View>
@@ -477,11 +533,11 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: colors.card,
+    backgroundColor: colors.primary,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.primary,
   },
   expandedCard: {
     flex: 2,
@@ -496,28 +552,32 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     ...typography.body,
-    color: colors.text,
+    color: colors.white,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   actionCount: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.white,
+    opacity: 0.8,
   },
   itemsList: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(255,255,255,0.3)',
+    overflow: 'hidden',
   },
   itemButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: colors.background,
+    backgroundColor: colors.white,
     borderRadius: 12,
     marginBottom: 8,
     gap: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   itemIcon: {
     fontSize: 20,

@@ -102,13 +102,14 @@ export default function QuestDetailScreen() {
             </View>
           )}
           <View style={styles.heroOverlay} />
-          
-          {/* Quest Badge */}
+        </View>
+        
+        {/* Quest Badges */}
+        <View style={styles.badgeContainer}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{quest.category}</Text>
           </View>
           
-          {/* Difficulty Badge */}
           <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(quest.difficulty) }]}>
             <Text style={styles.difficultyText}>{quest.difficulty}</Text>
           </View>
@@ -301,10 +302,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
+  badgeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.background,
+  },
   categoryBadge: {
-    position: 'absolute',
-    top: 100,
-    left: 16,
     backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -317,9 +322,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   difficultyBadge: {
-    position: 'absolute',
-    top: 100,
-    right: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
