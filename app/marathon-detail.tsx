@@ -321,7 +321,7 @@ export default function MarathonDetailScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
         options={{
-          title: marathon.title,
+          title: 'Marathon',
           headerStyle: styles.header,
           headerTitleStyle: styles.headerTitle,
           headerTintColor: colors.text,
