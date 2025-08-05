@@ -200,6 +200,34 @@ interface PurchaseItemResponse {
   currentItemCount: number;
 }
 
+interface AdoptPetRequest {
+  name: string;
+  type: string;
+}
+
+interface AdoptedPet {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface AdoptPetResponse {
+  message: string;
+  pet: AdoptedPet;
+  usedMarathonPoints: number;
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -344,5 +372,9 @@ export const apiClient = {
 
   async getShopAnimals(token?: string): Promise<ApiResponse<GetShopAnimalsResponse>> {
     return this.get<GetShopAnimalsResponse>('/pets/shop/animals', token);
+  },
+
+  async adoptPet(petData: AdoptPetRequest, token?: string): Promise<ApiResponse<AdoptPetResponse>> {
+    return this.post<AdoptPetResponse>('/pets/adopt', petData, token);
   },
 };

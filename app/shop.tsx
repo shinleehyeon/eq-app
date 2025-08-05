@@ -191,12 +191,58 @@ export default function ShopScreen() {
     fetchShopData();
   }, [accessToken]);
 
-  const handlePurchasePet = (pet: Pet) => {
-    if (userCoins >= pet.price) {
-      setUserCoins(userCoins - pet.price);
-      setOwnedPets([...ownedPets, pet.id]);
-      setCurrentPet(pet.id);
-      console.log('Purchased and selected pet:', pet.name);
+  const handlePurchasePet = async (pet: Pet) => {
+    if (userCoins >= pet.price && accessToken) {
+      const result = await apiClient.adoptPet({
+        name: pet.name,
+        type: pet.id
+      }, accessToken);
+      
+      if (result.success && result.data) {
+        const newCoinValue = userCoins - result.data.usedMarathonPoints;
+        setUserCoins(newCoinValue);
+        updateCoins(newCoinValue);
+        const adoptedPetType = result.data.pet.type;
+        setOwnedPets([...ownedPets, adoptedPetType]);
+        setCurrentPet(adoptedPetType);
+        
+        Alert.alert(
+          'Adoption Successful!',
+          `You have successfully adopted ${result.data.pet.name}!\nCoins used: ${result.data.usedMarathonPoints}`,
+          [
+            { text: 'OK', style: 'default' }
+          ]
+        );
+        
+        // Refresh shop animals data to update owned status
+        const shopAnimalsResult = await apiClient.getShopAnimals(accessToken);
+        if (shopAnimalsResult.success && shopAnimalsResult.data) {
+          const animals = shopAnimalsResult.data.animals.map(animal => ({
+            id: animal.type,
+            name: animal.defaultName,
+            price: animal.adoptionCost,
+            description: animal.description,
+            animationSource: getAnimationSource(animal.type),
+            rarity: animal.rarity,
+            owned: animal.owned,
+          }));
+          
+          setShopAnimals(animals);
+          
+          const ownedAnimalIds = animals
+            .filter(animal => animal.owned)
+            .map(animal => animal.id);
+          setOwnedPets(ownedAnimalIds);
+        }
+      } else {
+        Alert.alert(
+          'Adoption Failed',
+          'An error occurred while adopting the pet. Please try again.',
+          [
+            { text: 'OK', style: 'default' }
+          ]
+        );
+      }
     }
     setSelectedPet(null);
   };
