@@ -480,6 +480,7 @@ export default function MarathonDetailScreen() {
                       style={
                         selectedPet === 'turtle' ? styles.petAnimation : 
                         selectedPet === 'parrot' ? styles.petAnimationSky :
+                        selectedPet === 'duck' ? styles.petAnimationDuck :
                         styles.petAnimationLarge
                       }
                     />
@@ -741,6 +742,11 @@ const styles = StyleSheet.create({
   petAnimationSky: {
     width: 60,
     height: 60,
+    marginBottom: 20,
+  },
+  petAnimationDuck: {
+    width: 100,
+    height: 100,
   },
   bottomSection: {
     paddingHorizontal: 20,
