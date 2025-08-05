@@ -58,19 +58,13 @@ export default function PetDetailScreen() {
   const [showLoveAnimation, setShowLoveAnimation] = useState(false);
   const feedAnimation = useRef(new Animated.Value(0)).current;
   const playAnimation = useRef(new Animated.Value(0)).current;
-  const [foodItems, setFoodItems] = useState<OwnedItem[]>([
-    { id: 'seaweed', name: 'Fresh Seaweed', icon: '🌿', count: 3 },
-    { id: 'eco_berries', name: 'Eco Berries', icon: '🫐', count: 2 },
-    { id: 'organic_seeds', name: 'Organic Seeds', icon: '🌰', count: 1 },
-  ]);
-  const [toyItems, setToyItems] = useState<OwnedItem[]>([
-    { id: 'eco_ball', name: 'Eco Ball', icon: '⚽', count: 2 },
-    { id: 'puzzle_tree', name: 'Puzzle Tree', icon: '🌳', count: 1 },
-    { id: 'water_wheel', name: 'Water Wheel', icon: '🎡', count: 1 },
-  ]);
+  const [foodItems, setFoodItems] = useState<OwnedItem[]>([]);
+  const [toyItems, setToyItems] = useState<OwnedItem[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
 
   useEffect(() => {
     fetchPetData();
+    fetchUserItems();
   }, [petUuid]);
 
   const fetchPetData = async () => {
@@ -101,6 +95,59 @@ export default function PetDetailScreen() {
       Alert.alert('Error', 'Failed to load pet data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserItems = async () => {
+    try {
+      setItemsLoading(true);
+      if (!accessToken) {
+        return;
+      }
+
+      const response = await apiClient.getMyItems(accessToken);
+      if (response.success && response.data) {
+        const items = response.data.items;
+        
+        const foodIconMap: { [key: string]: string } = {
+          'fresh_seaweed': '🌿',
+          'eco_berries': '🫐',
+          'organic_seeds': '🌰',
+          'bamboo_snack': '🎋'
+        };
+        
+        const toyIconMap: { [key: string]: string } = {
+          'eco_ball': '⚽',
+          'puzzle_tree': '🌳',
+          'water_wheel': '🎡',
+          'flying_ring': '🪁'
+        };
+        
+        const foods = items
+          .filter(item => item.type === 'food')
+          .map(item => ({
+            id: item.name,
+            name: item.displayName,
+            icon: foodIconMap[item.name] || '🍃',
+            count: item.quantity
+          }));
+          
+        const toys = items
+          .filter(item => item.type === 'toy')
+          .map(item => ({
+            id: item.name,
+            name: item.displayName,
+            icon: toyIconMap[item.name] || '🎮',
+            count: item.quantity
+          }));
+          
+        setFoodItems(foods);
+        setToyItems(toys);
+      }
+    } catch (error) {
+      console.error('Error fetching user items:', error);
+    } finally {
+      setItemsLoading(false);
     }
   };
 
@@ -308,7 +355,7 @@ export default function PetDetailScreen() {
                 <Apple size={24} color={colors.white} />
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Feed Pet</Text>
-                  <Text style={styles.actionCount}>Items: {totalFood}</Text>
+                  <Text style={styles.actionCount}>Items: {itemsLoading ? '...' : totalFood}</Text>
                 </View>
               </View>
               
@@ -334,9 +381,11 @@ export default function PetDetailScreen() {
                       <Text style={styles.itemCount}>×{item.count}</Text>
                     </TouchableOpacity>
                   ))}
-                  {foodItems.filter(item => item.count > 0).length === 0 && (
+                  {itemsLoading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : foodItems.filter(item => item.count > 0).length === 0 ? (
                     <Text style={styles.emptyText}>No food available. Visit the shop!</Text>
-                  )}
+                  ) : null}
                 </Animated.View>
               )}
             </TouchableOpacity>
@@ -349,7 +398,7 @@ export default function PetDetailScreen() {
                 <Gamepad2 size={24} color={colors.white} />
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Play with Pet</Text>
-                  <Text style={styles.actionCount}>Items: {totalToys}</Text>
+                  <Text style={styles.actionCount}>Items: {itemsLoading ? '...' : totalToys}</Text>
                 </View>
               </View>
               
@@ -375,9 +424,11 @@ export default function PetDetailScreen() {
                       <Text style={styles.itemCount}>×{item.count}</Text>
                     </TouchableOpacity>
                   ))}
-                  {toyItems.filter(item => item.count > 0).length === 0 && (
+                  {itemsLoading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : toyItems.filter(item => item.count > 0).length === 0 ? (
                     <Text style={styles.emptyText}>No toys available. Visit the shop!</Text>
-                  )}
+                  ) : null}
                 </Animated.View>
               )}
             </TouchableOpacity>
