@@ -142,98 +142,112 @@ const FloatingPetBackground = ({ children }) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, initializeUser, selectedPet, accessToken, updateCoins } = useUserStore();
+  const { user, initializeUser, selectedPet, accessToken, updateCoins, setSelectedPet } = useUserStore();
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
   const [showPetModal, setShowPetModal] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
+  const [mainPetData, setMainPetData] = useState<any>(null);
   const [displayCoins, setDisplayCoins] = useState(0);
   const animationRef = React.useRef(null);
-  const timeoutRef = React.useRef(null);
+  const timeoutRef = React.useRef<number | null>(null);
   const animatedCoinValue = useRef(new Animated.Value(0)).current;
   
   const getAnimationSource = () => {
-    switch(selectedPet) {
+    const petType = mainPetData?.type || selectedPet;
+    switch(petType) {
       case 'turtle':
         return require('@/assets/animation/turtle.json');
       case 'bird':
         return require('@/assets/animation/bird.json');
+      case 'parrot':
+        return require('@/assets/animation/bird.json');
       case 'giraffe':
         return require('@/assets/animation/giraffe.json');
       case 'duck':
-      default:
         return require('@/assets/animation/duck.json');
+      default:
+        return require('@/assets/animation/bird.json');
     }
   };
 
-  const getPetData = () => {
-    switch(selectedPet) {
+  const getPetAbilities = (type: string) => {
+    switch(type) {
       case 'turtle':
-        return {
-          name: 'Sea Turtle',
-          level: 5,
-          experience: 60,
-          happiness: 85,
-          hunger: 30,
-          abilities: ['Ocean Protection', 'Plastic Cleanup'],
-          personality: 'Wise and calm',
-          favoriteFood: 'Seaweed',
-          birthdate: '2024-01-10',
-        };
+        return ['Ocean Protection', 'Plastic Cleanup'];
       case 'bird':
-        return {
-          name: 'Sky Guardian',
-          level: 4,
-          experience: 45,
-          happiness: 90,
-          hunger: 25,
-          abilities: ['Air Quality Monitor', 'Eco-awareness'],
-          personality: 'Graceful and alert',
-          favoriteFood: 'Seeds',
-          birthdate: '2024-02-01',
-        };
+      case 'parrot':
+        return ['Air Quality Monitor', 'Eco-awareness'];
       case 'giraffe':
-        return {
-          name: 'Forest Giant',
-          level: 7,
-          experience: 80,
-          happiness: 75,
-          hunger: 40,
-          abilities: ['Tree Protection', 'Forest Care'],
-          personality: 'Gentle and caring',
-          favoriteFood: 'Leaves',
-          birthdate: '2023-12-20',
-        };
+        return ['Tree Protection', 'Forest Care'];
       case 'duck':
       default:
-        return {
-          name: 'Ocean Duck',
-          level: 5,
-          experience: 60,
-          happiness: 85,
-          hunger: 30,
-          abilities: ['Water Conservation', 'Ocean Cleanup'],
-          personality: 'Playful and energetic',
-          favoriteFood: 'Seaweed Snacks',
-          birthdate: '2024-01-15',
-        };
+        return ['Water Conservation', 'Ocean Cleanup'];
     }
   };
 
-  const currentPet = getPetData();
+  const getPetPersonality = (type: string) => {
+    switch(type) {
+      case 'turtle':
+        return 'Wise and calm';
+      case 'bird':
+      case 'parrot':
+        return 'Graceful and alert';
+      case 'giraffe':
+        return 'Gentle and caring';
+      case 'duck':
+      default:
+        return 'Playful and energetic';
+    }
+  };
+
+  const getPetFavoriteFood = (type: string) => {
+    switch(type) {
+      case 'turtle':
+        return 'Seaweed';
+      case 'bird':
+      case 'parrot':
+        return 'Seeds';
+      case 'giraffe':
+        return 'Leaves';
+      case 'duck':
+      default:
+        return 'Seaweed Snacks';
+    }
+  };
+
+  const currentPet = mainPetData ? {
+    name: mainPetData.name,
+    level: mainPetData.level,
+    experience: mainPetData.experienceProgress || 0,
+    happiness: mainPetData.happiness,
+    hunger: mainPetData.hunger,
+    abilities: getPetAbilities(mainPetData.type),
+    personality: getPetPersonality(mainPetData.type),
+    favoriteFood: getPetFavoriteFood(mainPetData.type),
+    birthdate: new Date(mainPetData.createdAt).toLocaleDateString(),
+  } : null;
   
   useEffect(() => {
     const ensureUserInitialization = async () => {
       try {
-        // Always fetch profile data first to get the most up-to-date info
         if (accessToken) {
-          const result = await apiClient.getProfile(accessToken);
-          if (result.success && result.data) {
-            setProfileData(result.data.user);
-            const coins = result.data.user.marathonPoints || 0;
+          const [profileResult, mainPetResult] = await Promise.all([
+            apiClient.getProfile(accessToken),
+            apiClient.getMainPet(accessToken)
+          ]);
+          
+          if (profileResult.success && profileResult.data) {
+            setProfileData(profileResult.data.user);
+            const coins = profileResult.data.user.marathonPoints || 0;
             setDisplayCoins(coins);
             animatedCoinValue.setValue(coins);
             updateCoins(coins);
+          }
+          
+          if (mainPetResult.success && mainPetResult.data) {
+            setMainPetData(mainPetResult.data.mainPet);
+            setSelectedPet(mainPetResult.data.mainPet.type);
           }
         }
         
@@ -252,16 +266,13 @@ export default function HomeScreen() {
     ensureUserInitialization();
   }, [accessToken]);
 
-  // Animate coins when screen comes into focus
   const animateCoins = useCallback(() => {
-    // Prioritize user store coins over profile data for real-time updates
     const targetCoins = user?.coins !== undefined ? user.coins : (profileData?.marathonPoints || 0);
     
     const listener = animatedCoinValue.addListener(({ value }) => {
       setDisplayCoins(Math.floor(value));
     });
 
-    // Always start animation from 0 to create the counting effect
     animatedCoinValue.setValue(0);
     
     Animated.timing(animatedCoinValue, {
@@ -276,15 +287,25 @@ export default function HomeScreen() {
     };
   }, [user?.coins, profileData?.marathonPoints, animatedCoinValue]);
 
-  // Trigger animation when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       const cleanup = animateCoins();
+      
+      const refreshMainPet = async () => {
+        if (accessToken) {
+          const mainPetResult = await apiClient.getMainPet(accessToken);
+          if (mainPetResult.success && mainPetResult.data) {
+            setMainPetData(mainPetResult.data.mainPet);
+            setSelectedPet(mainPetResult.data.mainPet.type);
+          }
+        }
+      };
+      
+      refreshMainPet();
       return cleanup;
-    }, [animateCoins])
+    }, [animateCoins, accessToken])
   );
 
-  // Also animate on initial data load and when user coins change
   useEffect(() => {
     if (profileData || user) {
       animateCoins();
@@ -330,7 +351,6 @@ export default function HomeScreen() {
     }
   };
 
-  const badges = currentUser?.badges || [];
   const completedQuests = currentUser?.completedQuests || [];
   
 
@@ -410,17 +430,17 @@ export default function HomeScreen() {
                   loop={false}
                   style={[
                     styles.petAnimation,
-                    selectedPet === 'duck' && styles.petAnimationDuck,
-                    selectedPet === 'turtle' && styles.petAnimationTurtle,
-                    selectedPet === 'giraffe' && styles.petAnimationGiraffe,
-                    selectedPet === 'bird' && styles.petAnimationBird,
+                    (mainPetData?.type === 'duck' || selectedPet === 'duck') && styles.petAnimationDuck,
+                    (mainPetData?.type === 'turtle' || selectedPet === 'turtle') && styles.petAnimationTurtle,
+                    (mainPetData?.type === 'giraffe' || selectedPet === 'giraffe') && styles.petAnimationGiraffe,
+                    (mainPetData?.type === 'bird' || mainPetData?.type === 'parrot' || selectedPet === 'bird') && styles.petAnimationBird,
                   ]}
                   onAnimationFinish={() => {
                     setIsTurtleAnimating(false);
                     timeoutRef.current = setTimeout(() => {
                       setIsTurtleAnimating(true);
                       if (animationRef.current) {
-                        animationRef.current.play();
+                        (animationRef.current as any).play();
                       }
                     }, 2000);
                   }}
@@ -437,7 +457,7 @@ export default function HomeScreen() {
                 <View style={styles.statBar}>
                   <Text style={styles.statBarLabel}>Growth</Text>
                   <View style={styles.statBarTrack}>
-                    <View style={[styles.statBarFill, { width: '60%', backgroundColor: colors.primary }]} />
+                    <View style={[styles.statBarFill, { width: `${mainPetData?.experienceProgress || 0}%`, backgroundColor: colors.primary }]} />
                   </View>
                 </View>
               </View>
@@ -503,8 +523,8 @@ export default function HomeScreen() {
             </View>
             
             <View style={styles.petInfoSection}>
-              <Text style={styles.modalPetName}>{currentPet.name}</Text>
-              <Text style={styles.petPersonality}>{currentPet.personality}</Text>
+              <Text style={styles.modalPetName}>{currentPet?.name || 'Loading...'}</Text>
+              <Text style={styles.petPersonality}>{currentPet?.personality || ''}</Text>
             </View>
             
             <View style={styles.statsSection}>
@@ -512,41 +532,41 @@ export default function HomeScreen() {
                 <View style={styles.modalStatItem}>
                   <Trophy size={16} color={colors.primary} />
                   <Text style={styles.statTitle}>Level</Text>
-                  <Text style={styles.modalStatValue}>{currentPet.level}</Text>
+                  <Text style={styles.modalStatValue}>{currentPet?.level || 0}</Text>
                 </View>
                 <View style={styles.modalStatItem}>
                   <Utensils size={16} color={colors.warning} />
                   <Text style={styles.statTitle}>Hunger</Text>
-                  <Text style={styles.modalStatValue}>{currentPet.hunger}%</Text>
+                  <Text style={styles.modalStatValue}>{currentPet?.hunger || 0}%</Text>
                 </View>
                 <View style={styles.modalStatItem}>
                   <Heart size={16} color={colors.error} />
                   <Text style={styles.statTitle}>Happiness</Text>
-                  <Text style={styles.modalStatValue}>{currentPet.happiness}%</Text>
+                  <Text style={styles.modalStatValue}>{currentPet?.happiness || 0}%</Text>
                 </View>
               </View>
               
               <View style={styles.progressSection}>
                 <Text style={styles.progressLabel}>Experience</Text>
                 <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${currentPet.experience}%` }]} />
+                  <View style={[styles.progressFill, { width: `${currentPet?.experience || 0}%` }]} />
                 </View>
-                <Text style={styles.progressText}>{currentPet.experience}% to next level</Text>
+                <Text style={styles.progressText}>{currentPet?.experience || 0}% to next level</Text>
               </View>
             </View>
             
             <View style={styles.detailsSection}>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Abilities:</Text>
-                <Text style={styles.detailValue}>{currentPet.abilities.join(', ')}</Text>
+                <Text style={styles.detailValue}>{currentPet?.abilities?.join(', ') || 'Loading...'}</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Favorite Food:</Text>
-                <Text style={styles.detailValue}>{currentPet.favoriteFood}</Text>
+                <Text style={styles.detailValue}>{currentPet?.favoriteFood || 'Loading...'}</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Birthday:</Text>
-                <Text style={styles.detailValue}>{currentPet.birthdate}</Text>
+                <Text style={styles.detailValue}>{currentPet?.birthdate || 'Loading...'}</Text>
               </View>
             </View>
           </View>

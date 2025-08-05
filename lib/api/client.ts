@@ -233,6 +233,89 @@ interface AdoptPetResponse {
   usedMarathonPoints: number;
 }
 
+interface MainPet {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface GetMainPetResponse {
+  message: string;
+  mainPet: MainPet;
+}
+
+interface PetDetail {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface GetPetDetailResponse {
+  message: string;
+  pet: PetDetail;
+}
+
+interface SetMainPetRequest {
+  petId: string;
+}
+
+interface SetMainPetResponse {
+  message: string;
+  mainPet: MainPet;
+}
+
+interface UserPet {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface GetUserPetsResponse {
+  message: string;
+  data: UserPet[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export const apiClient = {
   async post<T>(
     endpoint: string,
@@ -433,10 +516,7 @@ export const apiClient = {
     return this.get<GetShopAnimalsResponse>("/pets/shop/animals", token);
   },
 
-  async adoptPet(
-    petData: AdoptPetRequest,
-    token?: string
-  ): Promise<ApiResponse<AdoptPetResponse>> {
-    return this.post<AdoptPetResponse>("/pets/adopt", petData, token);
+  async adoptPet(petData: AdoptPetRequest, token?: string): Promise<ApiResponse<AdoptPetResponse>> {
+    return this.post<AdoptPetResponse>('/pets/adopt', petData, token);
   },
 };
