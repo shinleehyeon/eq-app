@@ -41,6 +41,7 @@ interface Marathon {
     profileImage: string;
   };
   participantCount: number;
+  isParticipant?: boolean;
   spots: Array<{
     uuid: string;
     name: string;
@@ -76,6 +77,26 @@ export default function MarathonsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [joiningMarathons, setJoiningMarathons] = useState<Set<string>>(new Set());
+  const [myMarathonIds, setMyMarathonIds] = useState<Set<string>>(new Set());
+
+  const fetchMyMarathons = async () => {
+    if (!accessToken) {
+      return;
+    }
+    
+    try {
+      const response = await apiClient.get('/marathons/my', accessToken);
+      
+      if (response.success && response.data) {
+        const myMarathons = response.data.data || response.data || [];
+        const myIds = new Set(myMarathons.map((marathon: Marathon) => marathon.uuid));
+        setMyMarathonIds(myIds);
+      }
+    } catch (error) {
+      console.error("Error fetching my marathons:", error);
+    }
+  };
 
   const fetchMarathons = async (
     pageNum: number = 1,
@@ -91,13 +112,18 @@ export default function MarathonsScreen() {
         const newMarathons = response.data.data || [];
         const pagination = response.data.pagination;
 
-        console.log('Marathon data:', newMarathons);
-        console.log('First marathon eventImage:', newMarathons[0]?.eventImage);
-
+        const marathonsWithParticipantStatus = newMarathons.map((marathon: Marathon) => {
+          const isParticipant = myMarathonIds.has(marathon.uuid);
+          return {
+            ...marathon,
+            isParticipant
+          };
+        });
+        
         if (refresh) {
-          setMarathons(newMarathons);
+          setMarathons(marathonsWithParticipantStatus);
         } else {
-          setMarathons((prev) => [...prev, ...newMarathons]);
+          setMarathons((prev) => [...prev, ...marathonsWithParticipantStatus]);
         }
 
         setHasMore(pagination.hasNext);
@@ -112,14 +138,20 @@ export default function MarathonsScreen() {
     }
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    fetchMarathons(1, true);
+    await fetchMyMarathons();
   };
 
   useEffect(() => {
-    fetchMarathons(1, true);
+    fetchMyMarathons();
   }, []);
+
+  useEffect(() => {
+    if (myMarathonIds.size >= 0) {
+      fetchMarathons(1, true);
+    }
+  }, [myMarathonIds]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -156,8 +188,44 @@ export default function MarathonsScreen() {
     }
   };
 
+  const handleJoinMarathon = async (marathonId: string) => {
+    if (!accessToken) {
+      Alert.alert("Authentication Required", "Please log in to join the marathon.");
+      return;
+    }
+
+    setJoiningMarathons(prev => new Set(prev).add(marathonId));
+
+    try {
+      const response = await apiClient.post(`/marathons/${marathonId}/join`, {}, accessToken);
+      
+      if (response.success) {
+        Alert.alert("Success", "You have successfully joined the marathon!");
+        
+        setMyMarathonIds(prev => new Set(prev).add(marathonId));
+        
+        setMarathons(prev => prev.map(marathon => 
+          marathon.uuid === marathonId 
+            ? { ...marathon, isParticipant: true, participantCount: marathon.participantCount + 1 }
+            : marathon
+        ));
+      } else {
+        Alert.alert("Error", response.error || "Failed to join marathon");
+      }
+    } catch (error) {
+      console.error("Error joining marathon:", error);
+      Alert.alert("Error", "Failed to join marathon. Please try again.");
+    } finally {
+      setJoiningMarathons(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(marathonId);
+        return newSet;
+      });
+    }
+  };
+
   const handleMarathonPress = (marathonId: string) => {
-    router.push('/marathon-detail');
+    router.push(`/marathon-detail?id=${marathonId}`);
   };
 
   return (
@@ -219,10 +287,7 @@ export default function MarathonsScreen() {
                   }
                   style={styles.marathonImage}
                   resizeMode="cover"
-                  onError={(error) => {
-                    console.log('Image loading error:', error.nativeEvent.error);
-                    console.log('Image URL:', marathon.eventImage);
-                  }}
+                  onError={() => {}}
                 />
 
                 <View style={styles.cardContent}>
@@ -306,11 +371,32 @@ export default function MarathonsScreen() {
                         {marathon.organizer.name}
                       </Text>
                     </Text>
-                    <ChevronRight
-                      size={20}
-                      color={colors.textSecondary}
-                      style={styles.chevronIcon}
-                    />
+                  </View>
+
+                  <View style={styles.actionContainer}>
+                    {marathon.isParticipant ? (
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.viewButton]}
+                        onPress={() => handleMarathonPress(marathon.uuid)}
+                      >
+                        <Text style={styles.viewButtonText}>View Progress</Text>
+                        <ChevronRight size={16} color={colors.primary} />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[
+                          styles.actionButton, 
+                          styles.joinButton,
+                          joiningMarathons.has(marathon.uuid) && styles.disabledButton
+                        ]}
+                        onPress={() => handleJoinMarathon(marathon.uuid)}
+                        disabled={joiningMarathons.has(marathon.uuid)}
+                      >
+                        <Text style={styles.joinButtonText}>
+                          {joiningMarathons.has(marathon.uuid) ? "Joining..." : "Join Marathon"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>
@@ -474,5 +560,39 @@ const styles = StyleSheet.create({
   },
   chevronIcon: {
     marginLeft: 8,
+  },
+  actionContainer: {
+    marginTop: 16,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  joinButton: {
+    backgroundColor: colors.primary,
+  },
+  viewButton: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  disabledButton: {
+    backgroundColor: colors.textSecondary,
+    opacity: 0.6,
+  },
+  joinButtonText: {
+    ...typography.button,
+    color: colors.white,
+    fontWeight: "600",
+  },
+  viewButtonText: {
+    ...typography.button,
+    color: colors.primary,
+    fontWeight: "600",
   },
 });
