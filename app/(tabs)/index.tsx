@@ -17,14 +17,13 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
-import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle, Route, Users } from 'lucide-react-native';
+import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle, Route, Users, PawPrint } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const AnimatedBubble = ({ size, position, delay = 0 }) => {
   const animatedValue = React.useRef(new Animated.Value(0)).current;
-
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -318,9 +317,9 @@ export default function HomeScreen() {
             </View>
             
             <View style={styles.statItem}>
-              <Trophy size={20} color={colors.warning} />
-              <Text style={styles.statValue}>{badges.length}</Text>
-              <Text style={styles.statLabel}>Achievements</Text>
+              <PawPrint size={20} color={colors.success} />
+              <Text style={styles.statValue}>2</Text>
+              <Text style={styles.statLabel}>Pet count</Text>
             </View>
           </View>
         </View>
