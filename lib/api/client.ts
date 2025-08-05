@@ -180,17 +180,10 @@ interface PurchaseItemRequest {
 
 interface PurchaseItemResponse {
   message: string;
-  item: {
-    name: string;
-    displayName: string;
-    type: string;
-    cost: number;
-    description: string;
-    quantity: number;
-  };
-  user: {
-    marathonPoints: number;
-  };
+  itemName: string;
+  quantity: number;
+  usedMarathonPoints: number;
+  currentItemCount: number;
 }
 
 export const apiClient = {
@@ -332,6 +325,6 @@ export const apiClient = {
   },
 
   async purchaseItem(itemName: string, quantity: number, token?: string): Promise<ApiResponse<PurchaseItemResponse>> {
-    return this.post<PurchaseItemResponse>('/pets/shop/purchase', { itemName, quantity }, token);
+    return this.post<PurchaseItemResponse>('/pets/shop/buy', { itemName, quantity }, token);
   },
 };

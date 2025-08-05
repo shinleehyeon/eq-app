@@ -187,7 +187,7 @@ export default function ShopScreen() {
     if (userCoins >= totalPrice && accessToken) {
       const result = await apiClient.purchaseItem(item.id, purchaseQuantity, accessToken);
       if (result.success && result.data) {
-        setUserCoins(result.data.user.marathonPoints);
+        setUserCoins(prev => prev - result.data.usedMarathonPoints);
         
         const myItemsResult = await apiClient.getMyItems(accessToken);
         if (myItemsResult.success && myItemsResult.data) {
