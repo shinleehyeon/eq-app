@@ -1,33 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
   TouchableOpacity,
   SafeAreaView,
-  ActivityIndicator
-} from 'react-native';
-import { Stack } from 'expo-router';
-import { useRouter } from 'expo-router';
-import colors from '@/constants/colors';
-import typography from '@/constants/typography';
-import EcoTipCard from '@/components/EcoTipCard';
-import { BookOpen, Lightbulb, Video, Plus } from 'lucide-react-native';
-import mockEcoTips from '@/mocks/eco-tips';
-import { useUserStore } from '@/store/user-store';
+  ActivityIndicator,
+} from "react-native";
+import { Stack } from "expo-router";
+import { useRouter } from "expo-router";
+import colors from "@/constants/colors";
+import typography from "@/constants/typography";
+import EcoTipCard from "@/components/EcoTipCard";
+import { BookOpen, Lightbulb, Video, Plus } from "lucide-react-native";
+
+import { useUserStore } from "@/store/user-store";
+import { apiClient } from "@/lib/api/client";
 
 export default function LearnScreen() {
   const router = useRouter();
   const { accessToken } = useUserStore();
   const [learnContent, setLearnContent] = useState<any[]>([]);
-  const [selectedType, setSelectedType] = useState('eco_tips');
+  const [selectedType, setSelectedType] = useState("eco_tips");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  
-  const fetchLearnContent = async (pageNum: number = 1, append: boolean = false) => {
+
+  const fetchLearnContent = async (
+    pageNum: number = 1,
+    append: boolean = false
+  ) => {
     if (!append) {
       setIsLoading(true);
     } else {
@@ -35,45 +39,43 @@ export default function LearnScreen() {
     }
 
     try {
-      // Use mock data instead of API
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-      
-      let filteredItems = mockEcoTips;
-      
-      // Filter by selected type
-      if (selectedType === 'eco_tips') {
-        filteredItems = mockEcoTips.filter(tip => tip.resourceType === 'eco tip');
-      } else if (selectedType === 'articles') {
-        filteredItems = mockEcoTips.filter(tip => tip.resourceType === 'article');
-      } else if (selectedType === 'videos') {
-        filteredItems = mockEcoTips.filter(tip => tip.resourceType === 'video' || tip.videoLink);
+      // 실제 API에서 데이터 fetch
+      const response = await apiClient.getLearningList(
+        selectedType,
+        pageNum,
+        10,
+        accessToken || undefined
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error || "학습 콘텐츠를 불러오지 못했습니다.");
       }
-      
-      // Simulate pagination
-      const itemsPerPage = 10;
-      const startIndex = (pageNum - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedItems = filteredItems.slice(startIndex, endIndex);
-      
-      // Transform mock data to match EcoTipCard format
-      const transformedItems = paginatedItems.map(item => ({
+
+      console.log("response", response.data);
+
+      const { data, hasMore: apiHasMore } = response.data;
+
+      // EcoTipCard에 맞게 데이터 변환
+      const transformedItems = data.map((item: any) => ({
         ...item,
-        source: item.source || '',
+        id: item.uuid, // EcoTipCard에서 id를 사용하므로 uuid를 id로 매핑
+        source: item.links?.[0] || "", // 작성자 이름을 source로 사용
+        imageUrl: item.thumbnail || item.links?.[0] || "", // 썸네일을 imageUrl로 사용
         type: item.category || selectedType,
-        userId: 'unknown',
-        isDeleted: 'false'
+        userId: item.author?.uuid || "unknown",
+        isDeleted: "false",
       }));
-      
+
       if (append) {
-        setLearnContent(prev => [...prev, ...transformedItems]);
+        setLearnContent((prev) => [...prev, ...transformedItems]);
       } else {
         setLearnContent(transformedItems);
       }
-      
-      setHasMore(endIndex < filteredItems.length);
+
+      setHasMore(apiHasMore);
       setPage(pageNum);
     } catch (error) {
-      console.error('Error fetching learn content:', error);
+      console.error("Error fetching learn content:", error);
       if (!append) {
         setLearnContent([]);
       }
@@ -94,9 +96,21 @@ export default function LearnScreen() {
   };
 
   const resourceTypes = [
-    { id: 'eco_tips', icon: <Lightbulb size={24} color={colors.primary} />, title: 'Eco Tips' },
-    { id: 'articles', icon: <BookOpen size={24} color={colors.primary} />, title: 'Articles' },
-    { id: 'videos', icon: <Video size={24} color={colors.primary} />, title: 'Videos' },
+    {
+      id: "eco_tips",
+      icon: <Lightbulb size={24} color={colors.primary} />,
+      title: "Eco Tips",
+    },
+    {
+      id: "articles",
+      icon: <BookOpen size={24} color={colors.primary} />,
+      title: "Articles",
+    },
+    {
+      id: "videos",
+      icon: <Video size={24} color={colors.primary} />,
+      title: "Videos",
+    },
   ];
 
   const renderContent = ({ item }: { item: any }) => {
@@ -110,7 +124,7 @@ export default function LearnScreen() {
 
   const renderFooter = () => {
     if (!isLoadingMore) return null;
-    
+
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary} />
@@ -120,26 +134,25 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ title: 'Learn' }} />
-      
+      <Stack.Screen options={{ title: "Learn" }} />
+
       <View style={styles.tabContainer}>
         {resourceTypes.map((type) => (
           <TouchableOpacity
             key={type.id}
-            style={[
-              styles.tab,
-              selectedType === type.id && styles.activeTab
-            ]}
+            style={[styles.tab, selectedType === type.id && styles.activeTab]}
             onPress={() => {
               setSelectedType(type.id);
               setPage(1);
             }}
           >
             {type.icon}
-            <Text style={[
-              styles.tabText,
-              selectedType === type.id && styles.activeTabText
-            ]}>
+            <Text
+              style={[
+                styles.tabText,
+                selectedType === type.id && styles.activeTabText,
+              ]}
+            >
               {type.title}
             </Text>
           </TouchableOpacity>
@@ -155,7 +168,7 @@ export default function LearnScreen() {
           <Text style={styles.emptyText}>No {selectedType}s available yet</Text>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => router.push('/add-eco-tip')}
+            onPress={() => router.push("/add-eco-tip")}
           >
             <Plus size={20} color={colors.white} />
             <Text style={styles.addButtonText}>Add First {selectedType}</Text>
@@ -182,7 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.card,
     padding: 12,
     marginBottom: 8,
@@ -192,14 +205,14 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 12,
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: colors.primary + "20",
   },
   tabText: {
     ...typography.bodySmall,
@@ -208,20 +221,20 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: colors.primary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   listContent: {
     padding: 16,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   emptyText: {
@@ -230,21 +243,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   addButton: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addButtonText: {
     ...typography.body,
     color: colors.white,
     marginLeft: 8,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   footerLoader: {
     paddingVertical: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
 });

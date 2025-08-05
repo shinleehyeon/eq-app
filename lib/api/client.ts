@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://eqapi.juany.kr';
+const API_BASE_URL = "https://eqapi.juany.kr";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -90,6 +90,11 @@ interface UpdateProfileResponse {
   updatedAt: string;
 }
 
+interface LearningAuthor {
+  uuid: string;
+  name: string;
+}
+
 interface LearningItem {
   uuid: string;
   title: string;
@@ -101,7 +106,7 @@ interface LearningItem {
   links: string[];
   viewCount: number;
   likeCount: number;
-  authorId: string;
+  author: LearningAuthor;
   authorName: string;
   publishedAt: string;
   createdAt: string;
@@ -109,7 +114,7 @@ interface LearningItem {
 }
 
 interface GetLearningListResponse {
-  items: LearningItem[];
+  data: LearningItem[];
   total: number;
   page: number;
   limit: number;
@@ -151,7 +156,7 @@ export interface ShopItem {
   displayName: string;
   cost: number;
   description: string;
-  type: 'food' | 'toy';
+  type: "food" | "toy";
 }
 
 interface GetShopItemsResponse {
@@ -162,7 +167,7 @@ interface GetShopItemsResponse {
 export interface MyItem {
   name: string;
   displayName: string;
-  type: 'food' | 'toy';
+  type: "food" | "toy";
   cost: number;
   description: string;
   quantity: number;
@@ -178,7 +183,7 @@ export interface ShopAnimal {
   defaultName: string;
   adoptionCost: number;
   description: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rarity: "common" | "rare" | "epic" | "legendary";
   owned: boolean;
 }
 
@@ -229,25 +234,31 @@ interface AdoptPetResponse {
 }
 
 export const apiClient = {
-  async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
+  async post<T>(
+    endpoint: string,
+    data: any,
+    token?: string
+  ): Promise<ApiResponse<T>> {
     try {
       const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers,
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
 
       const result = await response.json();
@@ -256,33 +267,40 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error('API error:', error);
+      console.error("API error:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   },
 
-  async put<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
+  async put<T>(
+    endpoint: string,
+    data: any,
+    token?: string
+  ): Promise<ApiResponse<T>> {
     try {
       const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'PUT',
+        method: "PUT",
         headers,
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
 
       const result = await response.json();
@@ -291,49 +309,69 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error('API error:', error);
+      console.error("API error:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   },
 
-  async signIn(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
-    return this.post<LoginResponse>('/auth/signin', { email, password });
+  async signIn(
+    email: string,
+    password: string
+  ): Promise<ApiResponse<LoginResponse>> {
+    return this.post<LoginResponse>("/auth/signin", { email, password });
   },
 
-  async signUp(signUpData: SignUpRequest): Promise<ApiResponse<SignUpResponse>> {
-    return this.post<SignUpResponse>('/auth/signup', signUpData);
+  async signUp(
+    signUpData: SignUpRequest
+  ): Promise<ApiResponse<SignUpResponse>> {
+    return this.post<SignUpResponse>("/auth/signup", signUpData);
   },
 
-  async createLearning(learningData: CreateLearningRequest, token?: string): Promise<ApiResponse<CreateLearningResponse>> {
-    return this.post<CreateLearningResponse>('/learning', learningData, token);
+  async createLearning(
+    learningData: CreateLearningRequest,
+    token?: string
+  ): Promise<ApiResponse<CreateLearningResponse>> {
+    return this.post<CreateLearningResponse>("/learning", learningData, token);
   },
 
-  async updateProfile(profileData: UpdateProfileRequest, token?: string): Promise<ApiResponse<UpdateProfileResponse>> {
-    return this.put<UpdateProfileResponse>('/users/profile', profileData, token);
+  async updateProfile(
+    profileData: UpdateProfileRequest,
+    token?: string
+  ): Promise<ApiResponse<UpdateProfileResponse>> {
+    return this.put<UpdateProfileResponse>(
+      "/users/profile",
+      profileData,
+      token
+    );
   },
 
   async get<T>(endpoint: string, token?: string): Promise<ApiResponse<T>> {
     try {
       const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'GET',
+        method: "GET",
         headers,
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`API Error - Status: ${response.status}, Response: ${errorText}`);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        console.error(
+          `API Error - Status: ${response.status}, Response: ${errorText}`
+        );
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
 
       const result = await response.json();
@@ -342,39 +380,63 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error('API error:', error);
+      console.error("API error:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   },
 
-  async getLearningList(type: string, page: number = 1, limit: number = 10, token?: string): Promise<ApiResponse<GetLearningListResponse>> {
-    return this.get<GetLearningListResponse>(`/learning/type/${type}?page=${page}&limit=${limit}`, token);
+  async getLearningList(
+    type: string,
+    page: number = 1,
+    limit: number = 10,
+    token?: string
+  ): Promise<ApiResponse<GetLearningListResponse>> {
+    return this.get<GetLearningListResponse>(
+      `/learning/type/${type}?page=${page}&limit=${limit}`,
+      token
+    );
   },
 
   async getProfile(token?: string): Promise<ApiResponse<ProfileResponse>> {
-    return this.get<ProfileResponse>('/auth/profile', token);
+    return this.get<ProfileResponse>("/auth/profile", token);
   },
 
-  async getShopItems(token?: string): Promise<ApiResponse<GetShopItemsResponse>> {
-    return this.get<GetShopItemsResponse>('/pets/shop/items', token);
+  async getShopItems(
+    token?: string
+  ): Promise<ApiResponse<GetShopItemsResponse>> {
+    return this.get<GetShopItemsResponse>("/pets/shop/items", token);
   },
 
   async getMyItems(token?: string): Promise<ApiResponse<GetMyItemsResponse>> {
-    return this.get<GetMyItemsResponse>('/pets/items/my', token);
+    return this.get<GetMyItemsResponse>("/pets/items/my", token);
   },
 
-  async purchaseItem(itemName: string, quantity: number, token?: string): Promise<ApiResponse<PurchaseItemResponse>> {
-    return this.post<PurchaseItemResponse>('/pets/shop/buy', { itemName, quantity }, token);
+  async purchaseItem(
+    itemName: string,
+    quantity: number,
+    token?: string
+  ): Promise<ApiResponse<PurchaseItemResponse>> {
+    return this.post<PurchaseItemResponse>(
+      "/pets/shop/buy",
+      { itemName, quantity },
+      token
+    );
   },
 
-  async getShopAnimals(token?: string): Promise<ApiResponse<GetShopAnimalsResponse>> {
-    return this.get<GetShopAnimalsResponse>('/pets/shop/animals', token);
+  async getShopAnimals(
+    token?: string
+  ): Promise<ApiResponse<GetShopAnimalsResponse>> {
+    return this.get<GetShopAnimalsResponse>("/pets/shop/animals", token);
   },
 
-  async adoptPet(petData: AdoptPetRequest, token?: string): Promise<ApiResponse<AdoptPetResponse>> {
-    return this.post<AdoptPetResponse>('/pets/adopt', petData, token);
+  async adoptPet(
+    petData: AdoptPetRequest,
+    token?: string
+  ): Promise<ApiResponse<AdoptPetResponse>> {
+    return this.post<AdoptPetResponse>("/pets/adopt", petData, token);
   },
 };
