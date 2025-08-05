@@ -173,6 +173,26 @@ interface GetMyItemsResponse {
   items: MyItem[];
 }
 
+interface PurchaseItemRequest {
+  itemName: string;
+  quantity: number;
+}
+
+interface PurchaseItemResponse {
+  message: string;
+  item: {
+    name: string;
+    displayName: string;
+    type: string;
+    cost: number;
+    description: string;
+    quantity: number;
+  };
+  user: {
+    marathonPoints: number;
+  };
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -309,5 +329,9 @@ export const apiClient = {
 
   async getMyItems(token?: string): Promise<ApiResponse<GetMyItemsResponse>> {
     return this.get<GetMyItemsResponse>('/pets/items/my', token);
+  },
+
+  async purchaseItem(itemName: string, quantity: number, token?: string): Promise<ApiResponse<PurchaseItemResponse>> {
+    return this.post<PurchaseItemResponse>('/pets/shop/purchase', { itemName, quantity }, token);
   },
 };

@@ -38,6 +38,7 @@ interface ShopItem {
   icon: string;
   category: 'food' | 'toy';
   owned: boolean;
+  quantity?: number;
 }
 
 type TabType = 'pets' | 'food' | 'toys';
@@ -101,6 +102,7 @@ export default function ShopScreen() {
   const [profileData, setProfileData] = useState<any>(null);
   const [shopFoodItems, setShopFoodItems] = useState<ShopItem[]>([]);
   const [shopToyItems, setShopToyItems] = useState<ShopItem[]>([]);
+  const [purchaseQuantity, setPurchaseQuantity] = useState(1);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -127,6 +129,9 @@ export default function ShopScreen() {
           const myItemsSet = new Set(
             myItemsResult.data.items.map(item => item.name)
           );
+          const myItemsQuantityMap = new Map(
+            myItemsResult.data.items.map(item => [item.name, item.quantity])
+          );
 
           const foodItems = shopResult.data.items
             .filter(item => item.type === 'food')
@@ -137,7 +142,8 @@ export default function ShopScreen() {
               description: item.description,
               icon: ['🌿', '🫐', '🌰', '🎋'][index] || '🌿',
               category: 'food' as const,
-              owned: myItemsSet.has(item.name)
+              owned: myItemsSet.has(item.name),
+              quantity: myItemsQuantityMap.get(item.name) || 0
             }));
           
           const toyItems = shopResult.data.items
@@ -149,7 +155,8 @@ export default function ShopScreen() {
               description: item.description,
               icon: ['⚽', '🌳', '🎡', '🪁'][index] || '⚽',
               category: 'toy' as const,
-              owned: myItemsSet.has(item.name)
+              owned: myItemsSet.has(item.name),
+              quantity: myItemsQuantityMap.get(item.name) || 0
             }));
           
           setShopFoodItems(foodItems);
@@ -175,13 +182,34 @@ export default function ShopScreen() {
     setSelectedPet(null);
   };
 
-  const handlePurchaseItem = (item: ShopItem) => {
-    if (userCoins >= item.price) {
-      setUserCoins(userCoins - item.price);
-      setOwnedItems([...ownedItems, item.id]);
-      console.log('Purchased item:', item.name);
+  const handlePurchaseItem = async (item: ShopItem) => {
+    const totalPrice = item.price * purchaseQuantity;
+    if (userCoins >= totalPrice && accessToken) {
+      const result = await apiClient.purchaseItem(item.id, purchaseQuantity, accessToken);
+      if (result.success && result.data) {
+        setUserCoins(result.data.user.marathonPoints);
+        
+        const myItemsResult = await apiClient.getMyItems(accessToken);
+        if (myItemsResult.success && myItemsResult.data) {
+          const myItemsQuantityMap = new Map(
+            myItemsResult.data.items.map(item => [item.name, item.quantity])
+          );
+          
+          setShopFoodItems(prev => prev.map(foodItem => ({
+            ...foodItem,
+            quantity: myItemsQuantityMap.get(foodItem.id) || foodItem.quantity || 0
+          })));
+          setShopToyItems(prev => prev.map(toyItem => ({
+            ...toyItem,
+            quantity: myItemsQuantityMap.get(toyItem.id) || toyItem.quantity || 0
+          })));
+        }
+        
+        console.log('Purchased item:', item.name, 'Quantity:', purchaseQuantity);
+      }
     }
     setSelectedItem(null);
+    setPurchaseQuantity(1);
   };
 
   const handleSelectPet = (petId: string) => {
@@ -283,7 +311,7 @@ export default function ShopScreen() {
           </View>
         ) : (
           <View style={styles.ownedBadge}>
-            <Text style={styles.ownedText}>OWNED</Text>
+            <Text style={styles.ownedText}>possession: {item.quantity || 0}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -466,25 +494,35 @@ export default function ShopScreen() {
 
                 <Text style={styles.modalPetName}>{selectedItem.name}</Text>
                 <Text style={styles.modalDescription}>{selectedItem.description}</Text>
+                <Text style={styles.quantityText}>Current holding : {selectedItem.quantity || 0}</Text>
+
+                <View style={styles.quantitySelector}>
+                  <TouchableOpacity 
+                    style={styles.quantityButton} 
+                    onPress={() => setPurchaseQuantity(Math.max(1, purchaseQuantity - 1))}
+                  >
+                    <Text style={styles.quantityButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.quantityValue}>{purchaseQuantity}</Text>
+                  <TouchableOpacity 
+                    style={styles.quantityButton} 
+                    onPress={() => setPurchaseQuantity(Math.min(99, purchaseQuantity + 1))}
+                  >
+                    <Text style={styles.quantityButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
 
                 <View style={styles.modalPriceContainer}>
                   <Coins size={20} color={colors.warning} />
-                  <Text style={styles.modalPrice}>{selectedItem.price} coins</Text>
+                  <Text style={styles.modalPrice}>{selectedItem.price * purchaseQuantity} coins</Text>
                 </View>
 
-                {ownedItems.includes(selectedItem.id) ? (
-                  <View style={styles.selectedContainer}>
-                    <Check size={20} color={colors.success} />
-                    <Text style={styles.selectedModalText}>Already Owned</Text>
-                  </View>
-                ) : (
-                  <Button
-                    title={userCoins >= selectedItem.price ? 'Purchase' : 'Not enough coins'}
-                    onPress={() => handlePurchaseItem(selectedItem)}
-                    disabled={userCoins < selectedItem.price}
-                    style={styles.purchaseButton}
-                  />
-                )}
+                <Button
+                  title={userCoins >= selectedItem.price * purchaseQuantity ? '구매하기' : '코인이 부족합니다'}
+                  onPress={() => handlePurchaseItem(selectedItem)}
+                  disabled={userCoins < selectedItem.price * purchaseQuantity}
+                  style={styles.purchaseButton}
+                />
               </>
             )}
           </View>
@@ -830,5 +868,35 @@ const styles = StyleSheet.create({
   },
   modalItemIconText: {
     fontSize: 60,
+  },
+  quantityText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  quantitySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 16,
+  },
+  quantityButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityButtonText: {
+    ...typography.heading3,
+    color: colors.white,
+  },
+  quantityValue: {
+    ...typography.heading3,
+    minWidth: 60,
+    textAlign: 'center',
   },
 });
