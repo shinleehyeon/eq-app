@@ -1,34 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
   Share,
   Alert,
-  Modal
-} from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import colors from '@/constants/colors';
-import typography from '@/constants/typography';
-import { ExternalLink, Share2, User, MoreVertical, Pencil, Trash2, Bookmark, BookmarkCheck, Clock } from 'lucide-react-native';
-import { Linking } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { fetchUserDataFromFirebase } from '@/utils/firebase-helpers';
-import { database } from '@/config/firebase';
-import { ref, get, set } from 'firebase/database';
-import { useUserStore } from '@/store/user-store';
-import mockEcoTips from '@/mocks/eco-tips';
+  Modal,
+} from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import colors from "@/constants/colors";
+import typography from "@/constants/typography";
+import {
+  ExternalLink,
+  Share2,
+  User,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Bookmark,
+  BookmarkCheck,
+  Clock,
+} from "lucide-react-native";
+import { Linking } from "react-native";
+import { WebView } from "react-native-webview";
+import { fetchUserDataFromFirebase } from "@/utils/firebase-helpers";
+import { database } from "@/config/firebase";
+import { ref, get, set } from "firebase/database";
+import { useUserStore } from "@/store/user-store";
+import mockEcoTips from "@/mocks/eco-tips";
 
 export default function EcoTipDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const [tip, setTip] = useState(null);
-  const [author, setAuthor] = useState(null);
-  const [relatedTips, setRelatedTips] = useState([]);
+  const [tip, setTip] = useState<any>(null);
+  const [author, setAuthor] = useState<any>(null);
+  const [relatedTips, setRelatedTips] = useState<any[]>([]);
   const { user } = useUserStore();
   const [menuVisible, setMenuVisible] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -36,14 +46,14 @@ export default function EcoTipDetailScreen() {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(null);
-  
+
   useEffect(() => {
     const fetchTipData = async () => {
       if (!id) return;
-      
+
       try {
         // First try to find in mock data
-        const mockTip = mockEcoTips.find(tip => tip.id === id);
+        const mockTip = mockEcoTips.find((tip) => tip.id === id);
         if (mockTip) {
           setTip(mockTip);
           return;
@@ -52,7 +62,7 @@ export default function EcoTipDetailScreen() {
         // If not found in mock data, try Firebase
         const tipRef = ref(database, `learn/${id}`);
         const snapshot = await get(tipRef);
-        
+
         if (snapshot.exists()) {
           const tipData = snapshot.val();
           // Don't show deleted tips
@@ -63,7 +73,7 @@ export default function EcoTipDetailScreen() {
           setTip({ id, ...tipData });
         }
       } catch (error) {
-        console.error('Error fetching tip:', error);
+        console.error("Error fetching tip:", error);
       }
     };
 
@@ -90,34 +100,36 @@ export default function EcoTipDetailScreen() {
       try {
         // First get related tips from mock data
         const mockRelatedTips = mockEcoTips
-          .filter(t => t.id !== id && t.category === tip.category)
+          .filter((t) => t.id !== id && t.category === tip.category)
           .slice(0, 2);
-        
+
         if (mockRelatedTips.length > 0) {
           setRelatedTips(mockRelatedTips);
           return;
         }
 
         // If not enough mock data, try Firebase
-        const learnRef = ref(database, 'learn');
+        const learnRef = ref(database, "learn");
         const snapshot = await get(learnRef);
-        
+
         if (snapshot.exists()) {
           const allTips = Object.entries(snapshot.val())
             .map(([key, value]: [string, any]) => ({ id: key, ...value }))
-            .filter(t => t.id !== id && t.category === tip.category && !t.isDeleted)
+            .filter(
+              (t) => t.id !== id && t.category === tip.category && !t.isDeleted
+            )
             .slice(0, 2);
-          
+
           setRelatedTips(allTips);
         }
       } catch (error) {
-        console.error('Error fetching related tips:', error);
+        console.error("Error fetching related tips:", error);
       }
     };
 
     fetchRelatedTips();
   }, [tip?.category, id]);
-  
+
   const getYouTubeVideoId = (url: string) => {
     const regex = /(?:\?v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/;
     const match = url.match(regex);
@@ -125,10 +137,10 @@ export default function EcoTipDetailScreen() {
   };
 
   const renderVideoPlayer = () => {
-    if (tip?.resourceType === 'video' && tip.videoLink) {
+    if (tip?.resourceType === "video" && tip.videoLink) {
       const videoId = getYouTubeVideoId(tip.videoLink);
       const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      
+
       return (
         <View style={styles.videoContainer}>
           <WebView
@@ -142,7 +154,7 @@ export default function EcoTipDetailScreen() {
     }
     return null;
   };
-  
+
   if (!tip) {
     return (
       <View style={styles.container}>
@@ -150,15 +162,17 @@ export default function EcoTipDetailScreen() {
       </View>
     );
   }
-  
+
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `${tip.title}\n\n${tip.content}\n\nSource: ${tip.source || 'EcoBloom App'}`,
+        message: `${tip.title}\n\n${tip.content}\n\nSource: ${
+          tip.source || "EcoBloom App"
+        }`,
         title: tip.title,
       });
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error("Error sharing:", error);
     }
   };
 
@@ -177,15 +191,15 @@ export default function EcoTipDetailScreen() {
               await set(tipRef, {
                 ...tip,
                 isDeleted: true,
-                deletedAt: new Date().toISOString()
+                deletedAt: new Date().toISOString(),
               });
               router.back();
             } catch (error) {
-              console.error('Error deleting tip:', error);
-              Alert.alert('Error', 'Failed to delete eco tip');
+              console.error("Error deleting tip:", error);
+              Alert.alert("Error", "Failed to delete eco tip");
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -193,8 +207,10 @@ export default function EcoTipDetailScreen() {
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
     Alert.alert(
-      isBookmarked ? 'Removed from Bookmarks' : 'Added to Bookmarks',
-      isBookmarked ? 'Tip removed from your bookmarks' : 'Tip saved to your bookmarks'
+      isBookmarked ? "Removed from Bookmarks" : "Added to Bookmarks",
+      isBookmarked
+        ? "Tip removed from your bookmarks"
+        : "Tip saved to your bookmarks"
     );
   };
 
@@ -207,63 +223,74 @@ export default function EcoTipDetailScreen() {
   const generateQuizData = (tip) => {
     // Generate quiz based on tip content
     const quizzes = {
-      't1': {
+      t1: {
         question: "What percentage of all plastic ever made has been recycled?",
         options: ["9%", "25%", "45%", "60%"],
-        correctAnswer: 0
+        correctAnswer: 0,
       },
-      't2': {
-        question: "By how much can switching to a plant-based diet reduce your food carbon footprint?",
+      t2: {
+        question:
+          "By how much can switching to a plant-based diet reduce your food carbon footprint?",
         options: ["30%", "50%", "73%", "90%"],
-        correctAnswer: 2
+        correctAnswer: 2,
       },
-      't3': {
-        question: "What percentage of global carbon emissions does the fashion industry produce?",
+      t3: {
+        question:
+          "What percentage of global carbon emissions does the fashion industry produce?",
         options: ["5%", "10%", "15%", "20%"],
-        correctAnswer: 1
+        correctAnswer: 1,
       },
-      't4': {
-        question: "What percentage of global carbon emissions does the internet produce?",
+      t4: {
+        question:
+          "What percentage of global carbon emissions does the internet produce?",
         options: ["1.5%", "2.8%", "3.7%", "5.2%"],
-        correctAnswer: 2
+        correctAnswer: 2,
       },
-      't5': {
+      t5: {
         question: "How much water does a running tap use per minute?",
         options: ["3 liters", "6 liters", "9 liters", "12 liters"],
-        correctAnswer: 1
+        correctAnswer: 1,
       },
-      't6': {
+      t6: {
         question: "What is the main advantage of native plants?",
-        options: ["They're cheaper", "They require less water and pesticides", "They grow faster", "They're more colorful"],
-        correctAnswer: 1
+        options: [
+          "They're cheaper",
+          "They require less water and pesticides",
+          "They grow faster",
+          "They're more colorful",
+        ],
+        correctAnswer: 1,
       },
-      't7': {
-        question: "What percentage of greenhouse gas emissions does transportation account for in the US?",
+      t7: {
+        question:
+          "What percentage of greenhouse gas emissions does transportation account for in the US?",
         options: ["15%", "20%", "25%", "30%"],
-        correctAnswer: 3
+        correctAnswer: 3,
       },
-      't8': {
+      t8: {
         question: "What fraction of all food produced globally is wasted?",
         options: ["One-quarter", "One-third", "One-half", "Two-thirds"],
-        correctAnswer: 1
-      }
+        correctAnswer: 1,
+      },
     };
 
-    return quizzes[tip.id] || {
-      question: `What is the main topic of this ${tip.category} tip?`,
-      options: [
-        `${tip.category} conservation`,
-        "General recycling",
-        "Water usage",
-        "Energy efficiency"
-      ],
-      correctAnswer: 0
-    };
+    return (
+      quizzes[tip.id] || {
+        question: `What is the main topic of this ${tip.category} tip?`,
+        options: [
+          `${tip.category} conservation`,
+          "General recycling",
+          "Water usage",
+          "Energy efficiency",
+        ],
+        correctAnswer: 0,
+      }
+    );
   };
 
   const handleQuizAnswer = (answerIndex) => {
     if (quizCompleted) return;
-    
+
     setSelectedAnswer(answerIndex);
     const quiz = generateQuizData(tip);
     const correct = answerIndex === quiz.correctAnswer;
@@ -274,7 +301,7 @@ export default function EcoTipDetailScreen() {
     setTimeout(() => {
       Alert.alert(
         correct ? "Correct! 🎉" : "Incorrect 😔",
-        correct 
+        correct
           ? "Great job! You've understood the key point of this tip."
           : `The correct answer was: ${quiz.options[quiz.correctAnswer]}`,
         [{ text: "OK" }]
@@ -288,23 +315,23 @@ export default function EcoTipDetailScreen() {
     setIsCorrect(null);
     setShowQuiz(false);
   };
-  
+
   const getCategoryColor = () => {
     switch (tip.category) {
-      case 'energy':
-        return '#FFC107';
-      case 'waste':
-        return '#4CAF50';
-      case 'food':
-        return '#FF5722';
-      case 'transport':
-        return '#2196F3';
-      case 'water':
-        return '#03A9F4';
-      case 'advocacy':
-        return '#9C27B0';
-      case 'education':
-        return '#3F51B5';
+      case "energy":
+        return "#FFC107";
+      case "waste":
+        return "#4CAF50";
+      case "food":
+        return "#FF5722";
+      case "transport":
+        return "#2196F3";
+      case "water":
+        return "#03A9F4";
+      case "advocacy":
+        return "#9C27B0";
+      case "education":
+        return "#3F51B5";
       default:
         return colors.primary;
     }
@@ -313,81 +340,83 @@ export default function EcoTipDetailScreen() {
   const renderHeaderRight = () => {
     return (
       <View style={styles.headerActions}>
-        <TouchableOpacity 
-          onPress={handleBookmark}
-          style={styles.headerButton}
-        >
-          {isBookmarked ? 
-            <BookmarkCheck size={24} color={colors.warning} /> : 
+        <TouchableOpacity onPress={handleBookmark} style={styles.headerButton}>
+          {isBookmarked ? (
+            <BookmarkCheck size={24} color={colors.warning} />
+          ) : (
             <Bookmark size={24} color={colors.text} />
-          }
+          )}
         </TouchableOpacity>
-        
+
         {user?.id === tip?.userId ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setMenuVisible(true)}
             style={styles.headerButton}
           >
             <MoreVertical size={24} color={colors.text} />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity 
-            onPress={handleShare}
-            style={styles.headerButton}
-          >
+          <TouchableOpacity onPress={handleShare} style={styles.headerButton}>
             <Share2 size={24} color={colors.text} />
           </TouchableOpacity>
         )}
       </View>
     );
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
-          title: 'Eco Tip',
+          title: "Eco Tip",
           headerTitleStyle: styles.headerTitle,
           headerRight: renderHeaderRight,
-        }} 
+        }}
       />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Media Section */}
-        {tip.resourceType === 'video' && tip.videoLink ? (
+        {tip.resourceType === "video" && tip.videoLink ? (
           renderVideoPlayer()
         ) : tip.imageUrl ? (
-          <Image 
-            source={{ uri: tip.imageUrl }} 
-            style={styles.image} 
-            resizeMode="cover" 
+          <Image
+            source={{ uri: tip.imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
           />
         ) : (
           // Show a category-themed placeholder for tips without images
-          <View style={[styles.placeholderContainer, { backgroundColor: getCategoryColor() }]}>
+          <View
+            style={[
+              styles.placeholderContainer,
+              { backgroundColor: getCategoryColor() },
+            ]}
+          >
             <Text style={styles.placeholderTitle}>{tip.title}</Text>
-            <Text style={styles.placeholderCategory}>{tip.category.toUpperCase()}</Text>
+            <Text style={styles.placeholderCategory}>
+              {tip.category.toUpperCase()}
+            </Text>
           </View>
         )}
-        
+
         <View style={styles.content}>
-          <View 
+          <View
             style={[
-              styles.categoryBadge, 
-              { backgroundColor: getCategoryColor() }
+              styles.categoryBadge,
+              { backgroundColor: getCategoryColor() },
             ]}
           >
             <Text style={styles.categoryText}>
               {tip.category.charAt(0).toUpperCase() + tip.category.slice(1)}
             </Text>
           </View>
-          
+
           <Text style={styles.title}>{tip.title}</Text>
-          
+
           <View style={styles.metaContainer}>
             <View style={styles.metaItem}>
               <Clock size={16} color={colors.textSecondary} />
@@ -395,49 +424,62 @@ export default function EcoTipDetailScreen() {
             </View>
             <View style={styles.metaItem}>
               <Text style={styles.metaText}>•</Text>
-              <Text style={styles.metaText}>{tip.resourceType || 'Tip'}</Text>
+              <Text style={styles.metaText}>{tip.resourceType || "Tip"}</Text>
             </View>
           </View>
-          
+
           <Text style={styles.tipContent}>{tip.content}</Text>
-          
+
           {tip.userId && author && (
             <View style={styles.authorContainer}>
-              <Image 
-                source={{ 
-                  uri: author.avatar || require('@/assets/images/default-avatar.png')
-                }} 
-                style={styles.authorAvatar} 
+              <Image
+                source={{
+                  uri:
+                    author.avatar ||
+                    require("@/assets/images/default-avatar.png"),
+                }}
+                style={styles.authorAvatar}
               />
               <View style={styles.authorInfo}>
-                <Text style={styles.authorName}>{author.name || 'Anonymous'}</Text>
+                <Text style={styles.authorName}>
+                  {author.name || "Anonymous"}
+                </Text>
                 <Text style={styles.authorSubtext}>Author</Text>
               </View>
             </View>
           )}
-          
+
           {tip.source && (
-            <TouchableOpacity 
-              style={styles.sourceContainer} 
+            <TouchableOpacity
+              style={styles.sourceContainer}
               onPress={handleSourceClick}
               disabled={!tip.sourceLink}
             >
               <Text style={styles.sourceLabel}>Source:</Text>
               <View style={styles.sourceContent}>
-                <Text style={[styles.sourceText, tip.sourceLink && styles.clickableSource]}>{tip.source}</Text>
-                {tip.sourceLink && <ExternalLink size={16} color={colors.primary} />}
+                <Text
+                  style={[
+                    styles.sourceText,
+                    tip.sourceLink && styles.clickableSource,
+                  ]}
+                >
+                  {tip.source}
+                </Text>
+                {tip.sourceLink && (
+                  <ExternalLink size={16} color={colors.primary} />
+                )}
               </View>
             </TouchableOpacity>
           )}
-          
+
           <View style={styles.quizContainer}>
             <Text style={styles.quizTitle}>Test Your Knowledge</Text>
             <Text style={styles.quizDescription}>
               Did you understand the key points from this eco-tip?
             </Text>
-            
+
             {!showQuiz ? (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.startQuizButton}
                 onPress={() => setShowQuiz(true)}
               >
@@ -450,38 +492,45 @@ export default function EcoTipDetailScreen() {
                   return (
                     <>
                       <Text style={styles.quizQuestion}>{quiz.question}</Text>
-                      
+
                       <View style={styles.optionsContainer}>
                         {quiz.options.map((option, index) => (
                           <TouchableOpacity
                             key={index}
                             style={[
                               styles.optionButton,
-                              selectedAnswer === index && (
-                                isCorrect === true ? styles.correctOption : 
-                                isCorrect === false ? styles.incorrectOption : 
-                                styles.selectedOption
-                              )
+                              selectedAnswer === index &&
+                                (isCorrect === true
+                                  ? styles.correctOption
+                                  : isCorrect === false
+                                  ? styles.incorrectOption
+                                  : styles.selectedOption),
                             ]}
                             onPress={() => handleQuizAnswer(index)}
                             disabled={quizCompleted}
                           >
-                            <Text style={[
-                              styles.optionText,
-                              selectedAnswer === index && quizCompleted && styles.selectedOptionText
-                            ]}>
+                            <Text
+                              style={[
+                                styles.optionText,
+                                selectedAnswer === index &&
+                                  quizCompleted &&
+                                  styles.selectedOptionText,
+                              ]}
+                            >
                               {option}
                             </Text>
                           </TouchableOpacity>
                         ))}
                       </View>
-                      
+
                       {quizCompleted && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.resetQuizButton}
                           onPress={resetQuiz}
                         >
-                          <Text style={styles.resetQuizButtonText}>Try Again</Text>
+                          <Text style={styles.resetQuizButtonText}>
+                            Try Again
+                          </Text>
                         </TouchableOpacity>
                       )}
                     </>
@@ -493,9 +542,9 @@ export default function EcoTipDetailScreen() {
 
           <View style={styles.relatedTipsContainer}>
             <Text style={styles.relatedTipsTitle}>Related Tips</Text>
-            
-            {relatedTips.map(relatedTip => (
-              <TouchableOpacity 
+
+            {relatedTips.map((relatedTip) => (
+              <TouchableOpacity
                 key={relatedTip.id}
                 style={styles.relatedTipItem}
                 onPress={() => router.push(`/eco-tip-detail/${relatedTip.id}`)}
@@ -516,13 +565,13 @@ export default function EcoTipDetailScreen() {
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setMenuVisible(false)}
         >
           <View style={styles.menuContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
@@ -533,7 +582,7 @@ export default function EcoTipDetailScreen() {
               <Text style={styles.menuText}>Edit</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
@@ -541,10 +590,12 @@ export default function EcoTipDetailScreen() {
               }}
             >
               <Trash2 size={20} color={colors.error} />
-              <Text style={[styles.menuText, { color: colors.error }]}>Delete</Text>
+              <Text style={[styles.menuText, { color: colors.error }]}>
+                Delete
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
@@ -573,18 +624,18 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   metaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
     gap: 12,
   },
   metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   metaText: {
@@ -593,7 +644,7 @@ const styles = StyleSheet.create({
   },
   clickableSource: {
     color: colors.primary,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
   scrollView: {
     flex: 1,
@@ -602,36 +653,36 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 200,
   },
   placeholderContainer: {
-    width: '100%',
+    width: "100%",
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   placeholderTitle: {
     ...typography.heading3,
-    color: 'white',
-    textAlign: 'center',
+    color: "white",
+    textAlign: "center",
     marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowColor: "rgba(0,0,0,0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
   placeholderCategory: {
     ...typography.caption,
-    color: 'white',
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    color: "white",
+    fontWeight: "bold",
+    textShadowColor: "rgba(0,0,0,0.3)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     letterSpacing: 1,
   },
   videoContainer: {
-    width: '100%',
+    width: "100%",
     height: 200,
     backgroundColor: colors.border,
     marginBottom: 16,
@@ -643,16 +694,16 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   categoryBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     marginBottom: 12,
   },
   categoryText: {
-    color: 'white',
+    color: "white",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   title: {
     ...typography.heading2,
@@ -664,8 +715,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   authorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.card,
     padding: 16,
     borderRadius: 12,
@@ -682,7 +733,7 @@ const styles = StyleSheet.create({
   },
   authorName: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   authorSubtext: {
     ...typography.caption,
@@ -696,17 +747,17 @@ const styles = StyleSheet.create({
   },
   sourceLabel: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   sourceContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   sourceText: {
     ...typography.body,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   quizContainer: {
     backgroundColor: colors.card,
@@ -728,19 +779,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   startQuizButtonText: {
     ...typography.body,
     color: colors.white,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   quizContent: {
-    width: '100%',
+    width: "100%",
   },
   quizQuestion: {
     ...typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 16,
     lineHeight: 22,
   },
@@ -757,34 +808,34 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: colors.primary + "10",
   },
   correctOption: {
     borderColor: colors.success,
-    backgroundColor: colors.success + '20',
+    backgroundColor: colors.success + "20",
   },
   incorrectOption: {
     borderColor: colors.error,
-    backgroundColor: colors.error + '20',
+    backgroundColor: colors.error + "20",
   },
   optionText: {
     ...typography.body,
     color: colors.text,
   },
   selectedOptionText: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
   resetQuizButton: {
-    backgroundColor: colors.textSecondary + '20',
+    backgroundColor: colors.textSecondary + "20",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   resetQuizButtonText: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   relatedTipsContainer: {
     backgroundColor: colors.card,
@@ -803,7 +854,7 @@ const styles = StyleSheet.create({
   },
   relatedTipTitle: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   relatedTipContent: {
@@ -812,8 +863,8 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   menuContainer: {
     backgroundColor: colors.card,
@@ -822,8 +873,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     gap: 12,
   },

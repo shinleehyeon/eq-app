@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,38 +11,57 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
-  Platform
-} from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import colors from '@/constants/colors';
-import typography from '@/constants/typography';
-import { ArrowLeft, Clock, Coins, Users, Camera, MapPin, Leaf, CheckCircle, Share2, ImageIcon } from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
-import Button from '@/components/Button';
-import { useQuestsStore } from '@/store/challenges-store';
-import { useUserStore } from '@/store/user-store';
+  Platform,
+} from "react-native";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
+import colors from "@/constants/colors";
+import typography from "@/constants/typography";
+import {
+  ArrowLeft,
+  Clock,
+  Coins,
+  Users,
+  Camera,
+  MapPin,
+  Leaf,
+  CheckCircle,
+  Share2,
+  ImageIcon,
+} from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import Button from "@/components/Button";
+import { useQuestsStore } from "@/store/challenges-store";
+import { useUserStore } from "@/store/user-store";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function QuestDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const questId = params.id as string;
-  
-  const { dailyQuests, openQuests, activeQuests, acceptQuest, completeQuest, selectQuest, unselectQuest } = useQuestsStore();
+
+  const {
+    dailyQuests,
+    openQuests,
+    activeQuests,
+    acceptQuest,
+    completeQuest,
+    selectQuest,
+    unselectQuest,
+  } = useQuestsStore();
   const { user } = useUserStore();
-  
+
   const [showProofModal, setShowProofModal] = useState(false);
-  const [proofText, setProofText] = useState('');
-  const [proofImage, setProofImage] = useState('');
+  const [proofText, setProofText] = useState("");
+  const [proofImage, setProofImage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
+
   // Find the quest from either daily or open quests
-  const quest = [...dailyQuests, ...openQuests].find(q => q.id === questId);
+  const quest = [...dailyQuests, ...openQuests].find((q) => q.id === questId);
   const isActive = activeQuests.includes(questId);
   const isCompleted = user?.completedQuests?.includes(questId);
   const canSelectMore = activeQuests.length < 5;
-  
+
   if (!quest) {
     return (
       <SafeAreaView style={styles.container}>
@@ -50,7 +69,7 @@ export default function QuestDetailScreen() {
       </SafeAreaView>
     );
   }
-  
+
   const handleSelectQuest = () => {
     if (isActive) {
       unselectQuest(questId);
@@ -62,29 +81,31 @@ export default function QuestDetailScreen() {
   const handleAcceptQuest = () => {
     acceptQuest(questId);
   };
-  
+
   const handleCompleteQuest = () => {
     setShowProofModal(true);
   };
-  
+
   const submitProof = () => {
     completeQuest(questId, proofText || selectedImage || proofImage);
     setShowProofModal(false);
-    setProofText('');
-    setProofImage('');
+    setProofText("");
+    setProofImage("");
     setSelectedImage(null);
     router.back();
   };
 
   const requestPermissions = async () => {
-    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
+    const { status: cameraStatus } =
+      await ImagePicker.requestCameraPermissionsAsync();
+    const { status: mediaStatus } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (cameraStatus !== "granted" || mediaStatus !== "granted") {
       Alert.alert(
-        'Permissions Required',
-        'Camera and photo library permissions are required to upload images.',
-        [{ text: 'OK' }]
+        "Permissions Required",
+        "Camera and photo library permissions are required to upload images.",
+        [{ text: "OK" }]
       );
       return false;
     }
@@ -124,32 +145,31 @@ export default function QuestDetailScreen() {
   };
 
   const showImageOptions = () => {
-    Alert.alert(
-      'Select Image',
-      'Choose how you want to add a photo',
-      [
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Gallery', onPress: pickFromGallery },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    Alert.alert("Select Image", "Choose how you want to add a photo", [
+      { text: "Take Photo", onPress: takePhoto },
+      { text: "Choose from Gallery", onPress: pickFromGallery },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
-          title: '',
+          title: "",
           headerTransparent: true,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
               <ArrowLeft size={24} color={colors.white} />
             </TouchableOpacity>
           ),
-        }} 
+        }}
       />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -165,33 +185,38 @@ export default function QuestDetailScreen() {
           )}
           <View style={styles.heroOverlay} />
         </View>
-        
+
         {/* Quest Badges */}
         <View style={styles.badgeContainer}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{quest.category}</Text>
           </View>
-          
-          <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(quest.difficulty) }]}>
+
+          <View
+            style={[
+              styles.difficultyBadge,
+              { backgroundColor: getDifficultyColor(quest.difficulty) },
+            ]}
+          >
             <Text style={styles.difficultyText}>{quest.difficulty}</Text>
           </View>
         </View>
-        
+
         {/* Quest Info */}
         <View style={styles.infoContainer}>
           <Text style={styles.title}>{quest.title}</Text>
-          
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Coins size={16} color={colors.warning} />
               <Text style={styles.statText}>{quest.points} points</Text>
             </View>
-            
+
             <View style={styles.statItem}>
               <Clock size={16} color={colors.info} />
-              <Text style={styles.statText}>{quest.duration || '30 min'}</Text>
+              <Text style={styles.statText}>{quest.duration || "30 min"}</Text>
             </View>
-            
+
             {quest.participants && (
               <View style={styles.statItem}>
                 <Users size={16} color={colors.success} />
@@ -199,13 +224,13 @@ export default function QuestDetailScreen() {
               </View>
             )}
           </View>
-          
+
           {/* Description */}
           <View style={styles.descriptionContainer}>
             <Text style={styles.sectionTitle}>About this Quest</Text>
             <Text style={styles.description}>{quest.description}</Text>
           </View>
-          
+
           {/* Requirements */}
           {quest.requirements && (
             <View style={styles.requirementsContainer}>
@@ -218,7 +243,7 @@ export default function QuestDetailScreen() {
               ))}
             </View>
           )}
-          
+
           {/* Tips */}
           {quest.tips && (
             <View style={styles.tipsContainer}>
@@ -226,7 +251,7 @@ export default function QuestDetailScreen() {
               <Text style={styles.tipsText}>{quest.tips}</Text>
             </View>
           )}
-          
+
           {/* Impact */}
           {quest.impact && (
             <View style={styles.impactContainer}>
@@ -236,7 +261,7 @@ export default function QuestDetailScreen() {
           )}
         </View>
       </ScrollView>
-      
+
       {/* Action Button */}
       <View style={styles.actionContainer}>
         {isCompleted ? (
@@ -249,19 +274,27 @@ export default function QuestDetailScreen() {
             <Button
               title={isActive ? "Remove from My Quests" : "Select Quest"}
               onPress={handleSelectQuest}
-              style={isActive ? [styles.selectButton, styles.removeButton] : styles.selectButton}
+              style={
+                isActive
+                  ? [styles.selectButton, styles.removeButton]
+                  : styles.selectButton
+              }
               disabled={!isActive && !canSelectMore}
             />
             <Button
               title="Complete Quest"
               onPress={handleCompleteQuest}
-              style={!isActive ? [styles.completeButton, styles.disabledButton] : styles.completeButton}
+              style={
+                !isActive
+                  ? [styles.completeButton, styles.disabledButton]
+                  : styles.completeButton
+              }
               disabled={!isActive}
             />
           </View>
         )}
       </View>
-      
+
       {/* Proof Submission Modal */}
       <Modal
         visible={showProofModal}
@@ -270,7 +303,7 @@ export default function QuestDetailScreen() {
         onRequestClose={() => setShowProofModal(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
           <View style={styles.modalContent}>
@@ -280,11 +313,12 @@ export default function QuestDetailScreen() {
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
             </View>
-            
+
             <Text style={styles.modalDescription}>
-              Share how you completed this quest! You can write about your experience or upload a photo.
+              Share how you completed this quest! You can write about your
+              experience or upload a photo.
             </Text>
-            
+
             <TextInput
               style={styles.proofInput}
               placeholder="Describe what you did..."
@@ -294,11 +328,14 @@ export default function QuestDetailScreen() {
               numberOfLines={4}
               textAlignVertical="top"
             />
-            
+
             {selectedImage && (
               <View style={styles.selectedImageContainer}>
-                <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
-                <TouchableOpacity 
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={styles.selectedImage}
+                />
+                <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => setSelectedImage(null)}
                 >
@@ -306,19 +343,22 @@ export default function QuestDetailScreen() {
                 </TouchableOpacity>
               </View>
             )}
-            
+
             <View style={styles.photoButtonsContainer}>
               <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
                 <Camera size={20} color={colors.primary} />
                 <Text style={styles.photoButtonText}>Take Photo</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.photoButton} onPress={pickFromGallery}>
+
+              <TouchableOpacity
+                style={styles.photoButton}
+                onPress={pickFromGallery}
+              >
                 <ImageIcon size={20} color={colors.primary} />
                 <Text style={styles.photoButtonText}>From Gallery</Text>
               </TouchableOpacity>
             </View>
-            
+
             <Button
               title="Submit Proof"
               onPress={submitProof}
@@ -334,11 +374,11 @@ export default function QuestDetailScreen() {
 
 const getDifficultyColor = (difficulty: string) => {
   switch (difficulty.toLowerCase()) {
-    case 'easy':
+    case "easy":
       return colors.success;
-    case 'medium':
+    case "medium":
       return colors.warning;
-    case 'hard':
+    case "hard":
       return colors.error;
     default:
       return colors.info;
@@ -353,7 +393,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     marginLeft: 8,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 20,
   },
   scrollView: {
@@ -363,29 +403,29 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   heroContainer: {
-    position: 'relative',
+    position: "relative",
     height: screenHeight * 0.3,
   },
   heroImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   placeholderImage: {
     backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   heroOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: "rgba(0,0,0,0.2)",
   },
   badgeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: colors.background,
@@ -399,8 +439,8 @@ const styles = StyleSheet.create({
   categoryText: {
     ...typography.caption,
     color: colors.white,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
+    fontWeight: "bold",
+    textTransform: "uppercase",
   },
   difficultyBadge: {
     paddingHorizontal: 12,
@@ -410,8 +450,8 @@ const styles = StyleSheet.create({
   difficultyText: {
     ...typography.caption,
     color: colors.white,
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
+    fontWeight: "bold",
+    textTransform: "capitalize",
   },
   infoContainer: {
     padding: 20,
@@ -421,13 +461,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 24,
     gap: 20,
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   statText: {
@@ -450,8 +490,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   requirementItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 8,
     marginBottom: 8,
   },
@@ -461,7 +501,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tipsContainer: {
-    backgroundColor: colors.info + '20',
+    backgroundColor: colors.info + "20",
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
@@ -471,7 +511,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   impactContainer: {
-    backgroundColor: colors.success + '20',
+    backgroundColor: colors.success + "20",
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
@@ -481,7 +521,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   actionContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -491,10 +531,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   actionButton: {
-    width: '100%',
+    width: "100%",
   },
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   selectButton: {
@@ -513,10 +553,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.success + '20',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.success + "20",
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
@@ -524,12 +564,12 @@ const styles = StyleSheet.create({
   completedText: {
     ...typography.body,
     color: colors.success,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: colors.card,
@@ -539,9 +579,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   modalTitle: {
@@ -565,15 +605,15 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
   photoButtonsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 20,
   },
   photoButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.background,
     padding: 16,
     borderRadius: 12,
@@ -582,36 +622,36 @@ const styles = StyleSheet.create({
   photoButtonText: {
     ...typography.body,
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   selectedImageContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   selectedImage: {
     width: 200,
     height: 150,
     borderRadius: 12,
-    resizeMode: 'cover',
+    resizeMode: "cover",
   },
   removeImageButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -10,
     right: -10,
     backgroundColor: colors.error,
     width: 30,
     height: 30,
     borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   removeImageText: {
     color: colors.white,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   submitButton: {
-    width: '100%',
+    width: "100%",
   },
 });

@@ -53,7 +53,8 @@ export default function LearnScreen() {
 
       console.log("response", response.data);
 
-      const { data, hasMore: apiHasMore } = response.data;
+      const { data, pagination } = response.data;
+      const apiHasMore = pagination.hasNext;
 
       // EcoTipCard에 맞게 데이터 변환
       const transformedItems = data.map((item: any) => ({
@@ -117,7 +118,7 @@ export default function LearnScreen() {
     return (
       <EcoTipCard
         tip={item}
-        onPress={() => router.push(`/eco-tip-detail/${item.id}`)}
+        onPress={() => router.push(`/learning-detail/${item.uuid}`)}
       />
     );
   };

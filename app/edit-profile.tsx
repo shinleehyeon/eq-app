@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,37 +9,39 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
-  ActivityIndicator
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import colors from '@/constants/colors';
-import typography from '@/constants/typography';
-import { useUserStore } from '@/store/user-store';
-import Button from '@/components/Button';
-import { ArrowLeft, Camera, Image as ImageIcon } from 'lucide-react-native';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { apiClient } from '@/lib/api/client';
+  ActivityIndicator,
+} from "react-native";
+import { Stack, useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import colors from "@/constants/colors";
+import typography from "@/constants/typography";
+import { useUserStore } from "@/store/user-store";
+import Button from "@/components/Button";
+import { ArrowLeft, Camera, Image as ImageIcon } from "lucide-react-native";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { apiClient } from "@/lib/api/client";
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateProfile, accessToken } = useUserStore();
-  
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
+
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
   const [isLoading, setIsLoading] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   const requestPermissions = async () => {
-    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
+    const { status: cameraStatus } =
+      await ImagePicker.requestCameraPermissionsAsync();
+    const { status: libraryStatus } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (cameraStatus !== "granted" || libraryStatus !== "granted") {
       Alert.alert(
-        'Permission required',
-        'Please grant camera and photo library permissions to change your avatar.',
-        [{ text: 'OK' }]
+        "Permission required",
+        "Please grant camera and photo library permissions to change your avatar.",
+        [{ text: "OK" }]
       );
       return false;
     }
@@ -47,7 +49,7 @@ export default function EditProfileScreen() {
   };
 
   const handleTakePhoto = async () => {
-    if (!await requestPermissions()) return;
+    if (!(await requestPermissions())) return;
 
     try {
       const result = await ImagePicker.launchCameraAsync({
@@ -60,12 +62,12 @@ export default function EditProfileScreen() {
         setAvatar(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      Alert.alert("Error", "Failed to take photo");
     }
   };
 
   const handleChoosePhoto = async () => {
-    if (!await requestPermissions()) return;
+    if (!(await requestPermissions())) return;
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -78,7 +80,7 @@ export default function EditProfileScreen() {
         setAvatar(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to select photo');
+      Alert.alert("Error", "Failed to select photo");
     }
   };
 
@@ -104,9 +106,10 @@ export default function EditProfileScreen() {
 
       return new Promise((resolve, reject) => {
         uploadTask.on(
-          'state_changed',
+          "state_changed",
           (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             setUploadProgress(progress);
           },
           (error) => {
@@ -119,98 +122,98 @@ export default function EditProfileScreen() {
         );
       });
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error("Error uploading image:", error);
       throw error;
     }
   };
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Name cannot be empty');
+      Alert.alert("Error", "Name cannot be empty");
       return;
     }
-    
-    if (!email.trim() || !email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
+
+    if (!email.trim() || !email.includes("@")) {
+      Alert.alert("Error", "Please enter a valid email address");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const profileData = {
         name: name.trim(),
         email: email.trim(),
-        profileImage: avatar || user?.avatar || ''
+        profileImage: avatar || user?.avatar || "",
       };
 
-      const apiResponse = await apiClient.updateProfile(profileData, accessToken || undefined);
+      const apiResponse = await apiClient.updateProfile(
+        profileData,
+        accessToken || undefined
+      );
 
       if (apiResponse.success) {
         await updateProfile({
           name,
           email,
-          avatar: avatar || user?.avatar || ''
+          avatar: avatar || user?.avatar || "",
         });
-        
-        Alert.alert('Success', 'Profile updated successfully', [
-          { text: 'OK', onPress: () => router.back() }
+
+        Alert.alert("Success", "Profile updated successfully", [
+          { text: "OK", onPress: () => router.back() },
         ]);
       } else {
-        Alert.alert('Error', apiResponse.error || 'Failed to update profile');
+        Alert.alert("Error", apiResponse.error || "Failed to update profile");
       }
     } catch (error) {
-      console.error('Profile update error:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      console.error("Profile update error:", error);
+      Alert.alert("Error", "Failed to update profile");
     } finally {
       setIsLoading(false);
       setUploadProgress(0);
     }
   };
-  
-  const defaultAvatar = require('@/assets/images/default-avatar.png');
+
+  const defaultAvatar = require("@/assets/images/default-avatar.png");
   const avatarSource = avatar ? { uri: avatar } : defaultAvatar;
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
-          title: 'Edit Profile',
+          title: "Edit Profile",
           headerTitleStyle: styles.headerTitle,
           headerLeft: () => (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.back()}
               style={styles.headerButton}
             >
               <ArrowLeft size={24} color={colors.text} />
             </TouchableOpacity>
           ),
-        }} 
+        }}
       />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Avatar Section */}
         <View style={styles.avatarSection}>
-          <Image 
-            source={avatarSource}
-            style={styles.avatar} 
-          />
-          
+          <Image source={avatarSource} style={styles.avatar} />
+
           <View style={styles.avatarButtons}>
-            <TouchableOpacity 
-              style={styles.avatarButton} 
+            <TouchableOpacity
+              style={styles.avatarButton}
               onPress={handleTakePhoto}
             >
               <Camera size={20} color={colors.white} />
               <Text style={styles.avatarButtonText}>Take Photo</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.avatarButton} 
+
+            <TouchableOpacity
+              style={styles.avatarButton}
               onPress={handleChoosePhoto}
             >
               <ImageIcon size={20} color={colors.white} />
@@ -218,11 +221,11 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {/* Form Fields */}
         <View style={styles.formSection}>
           <Text style={styles.sectionTitle}>Personal Information</Text>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Name</Text>
             <TextInput
@@ -233,7 +236,7 @@ export default function EditProfileScreen() {
               placeholderTextColor={colors.textSecondary}
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email</Text>
             <TextInput
@@ -247,31 +250,33 @@ export default function EditProfileScreen() {
             />
           </View>
         </View>
-        
+
         {uploadProgress > 0 && uploadProgress < 100 && (
           <View style={styles.uploadProgressContainer}>
             <Text style={styles.uploadProgressText}>
               Uploading image: {Math.round(uploadProgress)}%
             </Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
+              <View
+                style={[styles.progressFill, { width: `${uploadProgress}%` }]}
+              />
             </View>
           </View>
         )}
-        
+
         {/* Save Button */}
-        <Button 
+        <Button
           title={isLoading ? "Saving..." : "Save Changes"}
           onPress={handleSave}
           disabled={isLoading}
           style={styles.saveButton}
         />
-        
+
         {isLoading && (
-          <ActivityIndicator 
-            size="large" 
-            color={colors.primary} 
-            style={styles.loadingIndicator} 
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+            style={styles.loadingIndicator}
           />
         )}
       </ScrollView>
@@ -298,7 +303,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   avatarSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   avatar: {
@@ -308,24 +313,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   avatarButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 12,
   },
   avatarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     minWidth: 140,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   avatarButtonText: {
     color: colors.white,
     marginLeft: 8,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   formSection: {
     marginBottom: 24,
@@ -339,7 +344,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   input: {
@@ -374,7 +379,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: colors.primary,
     borderRadius: 2,
   },

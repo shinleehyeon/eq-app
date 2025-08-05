@@ -1,50 +1,54 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
   Image,
   Alert,
   Platform,
-  ActivityIndicator
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import colors from '@/constants/colors';
-import typography from '@/constants/typography';
-import Button from '@/components/Button';
-import { Camera, Image as ImageIcon, Upload, X } from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { database, storage } from '@/config/firebase';
-import { ref as dbRef, push, set } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useUserStore } from '@/store/user-store';
-import Slider from '@react-native-community/slider';
+  ActivityIndicator,
+} from "react-native";
+import { Stack, useRouter } from "expo-router";
+import colors from "@/constants/colors";
+import typography from "@/constants/typography";
+import Button from "@/components/Button";
+import { Camera, Image as ImageIcon, Upload, X } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import { database, storage } from "@/config/firebase";
+import { ref as dbRef, push, set } from "firebase/database";
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import { useUserStore } from "@/store/user-store";
+import Slider from "@react-native-community/slider";
 
 export default function EditQuestScreen() {
   const router = useRouter();
   const { user } = useUserStore();
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Environmental');
-  const [difficulty, setDifficulty] = useState('medium');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Environmental");
+  const [difficulty, setDifficulty] = useState("medium");
   const [imageUri, setImageUri] = useState(null);
-  const [impact, setImpact] = useState('');
+  const [impact, setImpact] = useState("");
   const [duration, setDuration] = useState(1440); // Default 1 day (1440 minutes = 24 hours * 60)
-  const [steps, setSteps] = useState(['']);
+  const [steps, setSteps] = useState([""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Helper function to format duration
   const formatDuration = (minutes) => {
     const days = minutes / 1440; // Convert minutes to days
-    
+
     if (days === 1) {
-      return '1 day';
+      return "1 day";
     } else {
       return `${days} days`;
     }
@@ -52,15 +56,17 @@ export default function EditQuestScreen() {
 
   // Request permissions for camera and media library
   const requestPermissions = async () => {
-    if (Platform.OS !== 'web') {
-      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-      const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (cameraStatus !== 'granted' || mediaStatus !== 'granted') {
+    if (Platform.OS !== "web") {
+      const { status: cameraStatus } =
+        await ImagePicker.requestCameraPermissionsAsync();
+      const { status: mediaStatus } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (cameraStatus !== "granted" || mediaStatus !== "granted") {
         Alert.alert(
-          'Permissions Required',
-          'Please grant camera and media library permissions to upload images.',
-          [{ text: 'OK' }]
+          "Permissions Required",
+          "Please grant camera and media library permissions to upload images.",
+          [{ text: "OK" }]
         );
         return false;
       }
@@ -85,8 +91,8 @@ export default function EditQuestScreen() {
         setImageUri(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      console.error("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo. Please try again.");
     }
   };
 
@@ -107,8 +113,8 @@ export default function EditQuestScreen() {
         setImageUri(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
     }
   };
 
@@ -125,26 +131,28 @@ export default function EditQuestScreen() {
       // Convert image URI to blob
       const response = await fetch(imageUri);
       const blob = await response.blob();
-      
+
       // Create a storage reference
-      const filename = `quest_images/${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const filename = `quest_images/${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(7)}`;
       const imageRef = storageRef(storage, filename);
-      
+
       // Upload the blob
       const uploadTask = await uploadBytes(imageRef, blob);
-      
+
       // Get download URL
       const downloadURL = await getDownloadURL(imageRef);
       return downloadURL;
     } catch (error) {
-      console.error('Error uploading image:', error);
-      throw new Error('Failed to upload image');
+      console.error("Error uploading image:", error);
+      throw new Error("Failed to upload image");
     }
   };
 
   // Add function to handle steps
   const addStep = () => {
-    setSteps([...steps, '']);
+    setSteps([...steps, ""]);
   };
 
   const removeStep = (index) => {
@@ -163,39 +171,54 @@ export default function EditQuestScreen() {
   const handleSubmit = async () => {
     // Validate form
     if (!title.trim()) {
-      Alert.alert('Missing Information', 'Please enter a title for the quest.');
+      Alert.alert("Missing Information", "Please enter a title for the quest.");
       return;
     }
 
     if (!description.trim()) {
-      Alert.alert('Missing Information', 'Please provide a description for the quest.');
+      Alert.alert(
+        "Missing Information",
+        "Please provide a description for the quest."
+      );
       return;
     }
 
     if (!imageUri) {
-      Alert.alert('Missing Image', 'Please select an image for the quest.');
+      Alert.alert("Missing Image", "Please select an image for the quest.");
       return;
     }
 
     if (!impact.trim()) {
-      Alert.alert('Missing Information', 'Please describe the impact of this quest.');
+      Alert.alert(
+        "Missing Information",
+        "Please describe the impact of this quest."
+      );
       return;
     }
 
     if (!duration) {
-      Alert.alert('Missing Information', 'Please specify the estimated duration.');
+      Alert.alert(
+        "Missing Information",
+        "Please specify the estimated duration."
+      );
       return;
     }
 
     // Filter out empty steps
-    const filteredSteps = steps.filter(step => step.trim().length > 0);
+    const filteredSteps = steps.filter((step) => step.trim().length > 0);
     if (filteredSteps.length === 0) {
-      Alert.alert('Missing Steps', 'Please add at least one step for the quest.');
+      Alert.alert(
+        "Missing Steps",
+        "Please add at least one step for the quest."
+      );
       return;
     }
 
     if (!user || !user.id) {
-      Alert.alert('Authentication Required', 'Please sign in to create a quest.');
+      Alert.alert(
+        "Authentication Required",
+        "Please sign in to create a quest."
+      );
       return;
     }
 
@@ -209,13 +232,13 @@ export default function EditQuestScreen() {
       setUploadProgress(70);
 
       if (!imageUrl) {
-        throw new Error('Failed to upload image');
+        throw new Error("Failed to upload image");
       }
 
       // Create a new quest in Firebase
-      const questsRef = dbRef(database, 'openQuests');
+      const questsRef = dbRef(database, "openQuests");
       const newQuestRef = push(questsRef);
-      
+
       const questData = {
         id: newQuestRef.key,
         title,
@@ -228,69 +251,71 @@ export default function EditQuestScreen() {
         steps: filteredSteps,
         createdAt: new Date().toISOString(),
         userId: user.id,
-        active: true
+        active: true,
       };
-      
+
       await set(newQuestRef, questData);
       setUploadProgress(100);
-      
-      Alert.alert(
-        'Success!',
-        'Your quest has been created successfully.',
-        [
-          { 
-            text: 'View Quest', 
-            onPress: () => router.push(`/creative-challenge/${newQuestRef.key}`) 
+
+      Alert.alert("Success!", "Your quest has been created successfully.", [
+        {
+          text: "View Quest",
+          onPress: () => router.push(`/creative-challenge/${newQuestRef.key}`),
+        },
+        {
+          text: "Create Another",
+          onPress: () => {
+            // Reset form
+            setTitle("");
+            setDescription("");
+            setCategory("Environmental");
+            setDifficulty("medium");
+            setImageUri(null);
+            setImpact("");
+            setDuration(1440);
+            setSteps([""]);
+            setIsSubmitting(false);
+            setUploadProgress(0);
           },
-          {
-            text: 'Create Another',
-            onPress: () => {
-              // Reset form
-              setTitle('');
-              setDescription('');
-              setCategory('Environmental');
-              setDifficulty('medium');
-              setImageUri(null);
-              setImpact('');
-              setDuration(1440);
-              setSteps(['']);
-              setIsSubmitting(false);
-              setUploadProgress(0);
-            }
-          }
-        ]
-      );
+        },
+      ]);
     } catch (error) {
-      console.error('Error creating quest:', error);
-      Alert.alert('Error', 'Failed to create quest. Please try again.');
+      console.error("Error creating quest:", error);
+      Alert.alert("Error", "Failed to create quest. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const categories = ['Environmental', 'Social', 'Innovation', 'Education', 'Community'];
+  const categories = [
+    "Environmental",
+    "Social",
+    "Innovation",
+    "Education",
+    "Community",
+  ];
   const difficultyOptions = [
-    { value: 'easy', label: 'Easy' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'hard', label: 'Hard' }
+    { value: "easy", label: "Easy" },
+    { value: "medium", label: "Medium" },
+    { value: "hard", label: "Hard" },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
-          title: 'Create New Quest',
+          title: "Create New Quest",
           headerTitleStyle: styles.headerTitle,
-        }} 
+        }}
       />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.sectionTitle}>Quest Details</Text>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Title</Text>
           <TextInput
@@ -302,7 +327,7 @@ export default function EditQuestScreen() {
             maxLength={50}
           />
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Description</Text>
           <TextInput
@@ -316,7 +341,7 @@ export default function EditQuestScreen() {
             textAlignVertical="top"
           />
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Category</Text>
           <View style={styles.optionsContainer}>
@@ -325,14 +350,14 @@ export default function EditQuestScreen() {
                 key={cat}
                 style={[
                   styles.categoryOption,
-                  category === cat && styles.selectedCategory
+                  category === cat && styles.selectedCategory,
                 ]}
                 onPress={() => setCategory(cat)}
               >
-                <Text 
+                <Text
                   style={[
                     styles.categoryText,
-                    category === cat && styles.selectedCategoryText
+                    category === cat && styles.selectedCategoryText,
                   ]}
                 >
                   {cat}
@@ -341,7 +366,7 @@ export default function EditQuestScreen() {
             ))}
           </View>
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Difficulty</Text>
           <View style={styles.difficultyContainer}>
@@ -351,16 +376,17 @@ export default function EditQuestScreen() {
                 style={[
                   styles.difficultyOption,
                   difficulty === option.value && styles.selectedDifficulty,
-                  option.value === 'easy' && styles.easyDifficulty,
-                  option.value === 'medium' && styles.mediumDifficulty,
-                  option.value === 'hard' && styles.hardDifficulty,
+                  option.value === "easy" && styles.easyDifficulty,
+                  option.value === "medium" && styles.mediumDifficulty,
+                  option.value === "hard" && styles.hardDifficulty,
                 ]}
                 onPress={() => setDifficulty(option.value)}
               >
-                <Text 
+                <Text
                   style={[
                     styles.difficultyText,
-                    difficulty === option.value && styles.selectedDifficultyText
+                    difficulty === option.value &&
+                      styles.selectedDifficultyText,
                   ]}
                 >
                   {option.label}
@@ -369,7 +395,7 @@ export default function EditQuestScreen() {
             ))}
           </View>
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Impact</Text>
           <TextInput
@@ -426,10 +452,10 @@ export default function EditQuestScreen() {
             <Text style={styles.addStepText}>+ Add Step</Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>Quest Image</Text>
-          
+
           {imageUri ? (
             <View style={styles.imagePreviewContainer}>
               <Image
@@ -453,7 +479,7 @@ export default function EditQuestScreen() {
                 <Camera size={24} color={colors.primary} />
                 <Text style={styles.imagePickerText}>Take Photo</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.imagePickerButton}
                 onPress={pickImage}
@@ -464,7 +490,7 @@ export default function EditQuestScreen() {
             </View>
           )}
         </View>
-        
+
         <Button
           title="Edit Quest"
           icon={<Upload size={18} color={colors.background} />}
@@ -472,19 +498,16 @@ export default function EditQuestScreen() {
           disabled={isSubmitting}
           style={styles.submitButton}
         />
-        
+
         {isSubmitting && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBarContainer}>
-              <View 
-                style={[
-                  styles.progressBar,
-                  { width: `${uploadProgress}%` }
-                ]}
+              <View
+                style={[styles.progressBar, { width: `${uploadProgress}%` }]}
               />
             </View>
             <Text style={styles.progressText}>
-              {uploadProgress < 100 ? 'Creating quest...' : 'Quest created!'}
+              {uploadProgress < 100 ? "Creating quest..." : "Quest created!"}
             </Text>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
@@ -518,7 +541,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   input: {
@@ -532,11 +555,11 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginHorizontal: -4,
   },
   categoryOption: {
@@ -558,11 +581,11 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     color: colors.background,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   difficultyContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   difficultyOption: {
     flex: 1,
@@ -571,34 +594,34 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 8,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: 4,
   },
   selectedDifficulty: {
     borderWidth: 2,
   },
   easyDifficulty: {
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
   },
   mediumDifficulty: {
-    borderColor: '#FF9800',
+    borderColor: "#FF9800",
   },
   hardDifficulty: {
-    borderColor: '#F44336',
+    borderColor: "#F44336",
   },
   difficultyText: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   selectedDifficultyText: {
-    fontWeight: '700',
+    fontWeight: "700",
   },
   pointsInput: {
     maxWidth: 120,
   },
   imagePickerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   imagePickerButton: {
     flex: 1,
@@ -607,40 +630,40 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 8,
     paddingVertical: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginHorizontal: 4,
   },
   imagePickerText: {
     ...typography.bodySmall,
     color: colors.primary,
     marginTop: 8,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   imagePreviewContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 8,
   },
   imagePreview: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: 8,
     backgroundColor: colors.border,
   },
   clearImageButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     borderRadius: 20,
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   removeStepButton: {
@@ -652,12 +675,12 @@ const styles = StyleSheet.create({
   addStepText: {
     ...typography.bodySmall,
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   toggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   toggleButton: {
@@ -665,7 +688,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     backgroundColor: colors.border,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 2,
   },
   toggleActive: {
@@ -678,7 +701,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   toggleIndicatorActive: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
   toggleDescription: {
     ...typography.bodySmall,
@@ -689,18 +712,18 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginTop: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   progressBarContainer: {
-    width: '100%',
+    width: "100%",
     height: 6,
     backgroundColor: colors.border,
     borderRadius: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 8,
   },
   progressBar: {
-    height: '100%',
+    height: "100%",
     backgroundColor: colors.primary,
   },
   progressText: {
@@ -713,18 +736,18 @@ const styles = StyleSheet.create({
   },
   durationValue: {
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.primary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 8,
   },
   slider: {
-    width: '100%',
+    width: "100%",
     height: 40,
   },
   durationLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   durationLabel: {
     ...typography.caption,

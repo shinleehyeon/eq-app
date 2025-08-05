@@ -115,10 +115,15 @@ interface LearningItem {
 
 interface GetLearningListResponse {
   data: LearningItem[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
+  message: string;
+  pagination: {
+    hasNext: boolean;
+    hasPrev: boolean;
+    limit: number;
+    page: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 interface ProfileResponse {
@@ -316,6 +321,50 @@ interface GetUserPetsResponse {
   };
 }
 
+// Learning Quiz Interfaces
+interface LearningQuizDto {
+  uuid: string;
+  title: string;
+  options: string[];
+  correctAnswerIndex: number;
+  rewardMarathonPoints: number;
+  rewardExperience: number;
+  learningArticleId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface GetLearningQuizResponseDto {
+  message: string;
+  quiz: LearningQuizDto;
+}
+
+interface SubmitQuizAnswerResponseDto {
+  message: string;
+  isCorrect: boolean;
+  correctAnswerIndex: number;
+  earnedMarathonPoints: number;
+  earnedExperience: number;
+  attempt: {
+    uuid: string;
+    learningQuizId: string;
+    userId: string;
+    selectedAnswerIndex: number;
+    correctAnswerIndex: number;
+    isCorrect: boolean;
+    earnedMarathonPoints: number;
+    earnedExperience: number;
+    createdAt: string;
+  };
+}
+
+interface CheckQuizSolvedResponseDto {
+  message: string;
+  isSolved: boolean;
+  isCorrect: boolean;
+  solvedAt: string | null;
+}
+
 export const apiClient = {
   async post<T>(
     endpoint: string,
@@ -472,6 +521,43 @@ export const apiClient = {
     }
   },
 
+  async delete<T>(endpoint: string, token?: string): Promise<ApiResponse<T>> {
+    try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      console.error("API error:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      };
+    }
+  },
+
   async getLearningList(
     type: string,
     page: number = 1,
@@ -516,23 +602,65 @@ export const apiClient = {
     return this.get<GetShopAnimalsResponse>("/pets/shop/animals", token);
   },
 
-  async adoptPet(petData: AdoptPetRequest, token?: string): Promise<ApiResponse<AdoptPetResponse>> {
-    return this.post<AdoptPetResponse>('/pets/adopt', petData, token);
+  async adoptPet(
+    petData: AdoptPetRequest,
+    token?: string
+  ): Promise<ApiResponse<AdoptPetResponse>> {
+    return this.post<AdoptPetResponse>("/pets/adopt", petData, token);
   },
 
   async getMainPet(token?: string): Promise<ApiResponse<GetMainPetResponse>> {
-    return this.get<GetMainPetResponse>('/pets/main', token);
+    return this.get<GetMainPetResponse>("/pets/main", token);
   },
 
-  async getPetDetail(petUuid: string, token?: string): Promise<ApiResponse<GetPetDetailResponse>> {
+  async getPetDetail(
+    petUuid: string,
+    token?: string
+  ): Promise<ApiResponse<GetPetDetailResponse>> {
     return this.get<GetPetDetailResponse>(`/pets/${petUuid}`, token);
   },
 
-  async setMainPet(petId: string, token?: string): Promise<ApiResponse<SetMainPetResponse>> {
-    return this.post<SetMainPetResponse>('/pets/main', { petId }, token);
+  async setMainPet(
+    petId: string,
+    token?: string
+  ): Promise<ApiResponse<SetMainPetResponse>> {
+    return this.post<SetMainPetResponse>("/pets/main", { petId }, token);
   },
 
   async getUserPets(token?: string): Promise<ApiResponse<GetUserPetsResponse>> {
-    return this.get<GetUserPetsResponse>('/pets/', token);
+    return this.get<GetUserPetsResponse>("/pets/", token);
+  },
+
+  // Learning Quiz APIs
+  async getLearningQuizByArticleId(
+    articleId: string,
+    token?: string
+  ): Promise<ApiResponse<GetLearningQuizResponseDto>> {
+    return this.get<GetLearningQuizResponseDto>(
+      `/learning-quiz/article/${articleId}`,
+      token
+    );
+  },
+
+  async submitQuizAnswer(
+    quizId: string,
+    selectedAnswerIndex: number,
+    token?: string
+  ): Promise<ApiResponse<SubmitQuizAnswerResponseDto>> {
+    return this.post<SubmitQuizAnswerResponseDto>(
+      `/learning-quiz/${quizId}/submit`,
+      { selectedAnswerIndex },
+      token
+    );
+  },
+
+  async checkQuizSolvedByArticle(
+    articleId: string,
+    token?: string
+  ): Promise<ApiResponse<CheckQuizSolvedResponseDto>> {
+    return this.get<CheckQuizSolvedResponseDto>(
+      `/learning-quiz/check-solved/article/${articleId}`,
+      token
+    );
   },
 };
