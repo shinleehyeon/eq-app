@@ -455,10 +455,6 @@ export default function HomeScreen() {
               
               <View style={styles.petStats}>
                 <View style={styles.statBar}>
-                  <Text style={styles.statBarLabel}>Growth</Text>
-                  <View style={styles.statBarTrack}>
-                    <View style={[styles.statBarFill, { width: `${mainPetData?.experienceProgress || 0}%`, backgroundColor: colors.primary }]} />
-                  </View>
                 </View>
               </View>
             </View>

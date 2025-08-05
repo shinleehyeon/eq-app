@@ -55,7 +55,7 @@ export default function PetDetailScreen() {
   const [petData, setPetData] = useState<PetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedCard, setExpandedCard] = useState<'feed' | 'play' | null>(null);
-  const [showLoveAnimation, setShowLoveAnimation] = useState(false);
+  const [loveAnimations, setLoveAnimations] = useState<{id: number, x: number, y: number}[]>([]);
   const feedAnimation = useRef(new Animated.Value(0)).current;
   const playAnimation = useRef(new Animated.Value(0)).current;
   const [foodItems, setFoodItems] = useState<OwnedItem[]>([]);
@@ -157,6 +157,8 @@ export default function PetDetailScreen() {
       case 'turtle':
         return require('@/assets/animation/turtle.json');
       case 'bird':
+      case 'parrot':
+      case 'otter':
         return require('@/assets/animation/bird.json');
       case 'giraffe':
         return require('@/assets/animation/giraffe.json');
@@ -171,6 +173,7 @@ export default function PetDetailScreen() {
       case 'turtle':
         return 'Wise and calm';
       case 'bird':
+      case 'otter':
         return 'Graceful and alert';
       case 'giraffe':
         return 'Gentle and caring';
@@ -185,6 +188,7 @@ export default function PetDetailScreen() {
       case 'turtle':
         return ['Ocean Protection', 'Plastic Cleanup'];
       case 'bird':
+      case 'otter':
         return ['Air Quality Monitor', 'Eco-awareness'];
       case 'giraffe':
         return ['Tree Protection', 'Forest Care'];
@@ -211,10 +215,27 @@ export default function PetDetailScreen() {
   const totalToys = toyItems.reduce((sum, item) => sum + item.count, 0);
 
   const showLoveEffect = () => {
-    setShowLoveAnimation(true);
-    setTimeout(() => {
-      setShowLoveAnimation(false);
-    }, 2000);
+    const positions = [
+      { x: -100, y: 20 },   // 왼쪽
+      { x: 0, y: 0 },       // 중앙
+      { x: 100, y: 20 },    // 오른쪽
+    ];
+    
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        const id = Date.now() + i;
+        const basePos = positions[i];
+        // 각 기본 위치에서 약간의 랜덤 오프셋 추가
+        const x = basePos.x + (-20 + Math.random() * 40);
+        const y = basePos.y + (-20 + Math.random() * 40);
+        
+        setLoveAnimations(prev => [...prev, { id, x, y }]);
+        
+        setTimeout(() => {
+          setLoveAnimations(prev => prev.filter(anim => anim.id !== id));
+        }, 2000);
+      }, i * 200); // 200ms delay between each heart
+    }
   };
 
   const handleFeedPet = async (item: OwnedItem) => {
@@ -363,8 +384,19 @@ export default function PetDetailScreen() {
             loop
             style={styles.petAnimation}
           />
-          {showLoveAnimation && (
-            <View style={styles.loveAnimationContainer}>
+          {loveAnimations.map((anim) => (
+            <View 
+              key={anim.id}
+              style={[
+                styles.loveAnimationContainer,
+                {
+                  transform: [
+                    { translateX: anim.x },
+                    { translateY: anim.y }
+                  ]
+                }
+              ]}
+            >
               <LottieView
                 source={require('@/assets/animation/love.json')}
                 autoPlay
@@ -372,7 +404,7 @@ export default function PetDetailScreen() {
                 style={styles.loveAnimation}
               />
             </View>
-          )}
+          ))}
         </View>
 
           <View style={styles.petInfoSection}>
@@ -560,13 +592,14 @@ const styles = StyleSheet.create({
   },
   loveAnimationContainer: {
     position: 'absolute',
-    top: 40,
-    right: 10,
+    top: 100,
+    left: '50%',
+    marginLeft: -60,
     zIndex: 10,
   },
   loveAnimation: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
   },
   petInfoSection: {
     alignItems: 'center',
