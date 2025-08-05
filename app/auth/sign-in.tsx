@@ -50,9 +50,6 @@ export default function SignInScreen() {
     if (!password) {
       setPasswordError('Password is required');
       return false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      return false;
     }
     setPasswordError('');
     return true;

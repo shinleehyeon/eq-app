@@ -19,6 +19,7 @@ import { useUserStore } from '@/store/user-store';
 import Button from '@/components/Button';
 import { Award, Calendar, Info, ShoppingBag, X, Heart, Utensils, Trophy, Coins, Target, CheckCircle, Route, Users, PawPrint } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
+import { apiClient } from '@/lib/api/client';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -139,10 +140,11 @@ const FloatingPetBackground = ({ children }) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, initializeUser, selectedPet } = useUserStore();
+  const { user, initializeUser, selectedPet, accessToken } = useUserStore();
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
   const [showPetModal, setShowPetModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef(null);
   
@@ -223,6 +225,14 @@ export default function HomeScreen() {
           console.warn('User is not initialized. Attempting to initialize user.');
           await initializeUser();
         }
+        
+        if (accessToken) {
+          const result = await apiClient.getProfile(accessToken);
+          if (result.success && result.data) {
+            setProfileData(result.data.user);
+          }
+        }
+        
         setIsInitializing(false);
       } catch (error) {
         console.error('Error initializing user:', error);
@@ -231,7 +241,7 @@ export default function HomeScreen() {
     };
 
     ensureUserInitialization();
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     return () => {
@@ -297,7 +307,7 @@ export default function HomeScreen() {
             
             <View style={styles.coinsContainer}>
               <Coins size={28} color={colors.warning} />
-              <Text style={styles.coinsText}>500</Text>
+              <Text style={styles.coinsText}>{profileData?.marathonPoints || 0}</Text>
             </View>
           </View>
         </View>
@@ -318,8 +328,8 @@ export default function HomeScreen() {
             
             <View style={styles.statItem}>
               <PawPrint size={20} color={colors.success} />
-              <Text style={styles.statValue}>2</Text>
-              <Text style={styles.statLabel}>Pet count</Text>
+              <Text style={styles.statValue}>{(profileData?.petToys || 0) + (profileData?.petFood || 0)}</Text>
+              <Text style={styles.statLabel}>Pet Items</Text>
             </View>
           </View>
         </View>

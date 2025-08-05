@@ -116,6 +116,36 @@ interface GetLearningListResponse {
   hasMore: boolean;
 }
 
+interface ProfileResponse {
+  message: string;
+  user: {
+    uuid: string;
+    id: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    role: string;
+    profileImage: string | null;
+
+    level: number;
+    experience: number;
+    marathonPoints: number;
+    freshSeaweed: number;
+    ecoBerries: number;
+    organicSeeds: number;
+    bambooSnack: number;
+    ecoBall: number;
+    puzzleTree: number;
+    waterWheel: number;
+    flyingRing: number;
+    petToys: number;
+    petFood: number;
+    lastLoginAt: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -240,5 +270,9 @@ export const apiClient = {
 
   async getLearningList(type: string, page: number = 1, limit: number = 10, token?: string): Promise<ApiResponse<GetLearningListResponse>> {
     return this.get<GetLearningListResponse>(`/learning/type/${type}?page=${page}&limit=${limit}`, token);
+  },
+
+  async getProfile(token?: string): Promise<ApiResponse<ProfileResponse>> {
+    return this.get<ProfileResponse>('/auth/profile', token);
   },
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import LottieView from 'lottie-react-native';
 import { X, Star, Coins, ArrowLeft, Check, Apple, Gamepad2 } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { useUserStore } from '@/store/user-store';
+import { apiClient } from '@/lib/api/client';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -168,13 +169,27 @@ const toyItems: ShopItem[] = [
 
 export default function ShopScreen() {
   const router = useRouter();
-  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, user } = useUserStore();
+  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, user, accessToken } = useUserStore();
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('pets');
-  const [userCoins, setUserCoins] = useState(user?.coins || 500);
+  const [userCoins, setUserCoins] = useState(user?.coins || 0);
   const [ownedPets, setOwnedPets] = useState<string[]>(['duck', 'bird']);
   const [ownedItems, setOwnedItems] = useState<string[]>([]);
+  const [profileData, setProfileData] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (accessToken) {
+        const result = await apiClient.getProfile(accessToken);
+        if (result.success && result.data) {
+          setProfileData(result.data.user);
+          setUserCoins(result.data.user.marathonPoints || 0);
+        }
+      }
+    };
+    fetchProfile();
+  }, [accessToken]);
 
   const handlePurchasePet = (pet: Pet) => {
     if (userCoins >= pet.price) {
@@ -318,7 +333,7 @@ export default function ShopScreen() {
       <View style={styles.header}>
         <View style={styles.coinsContainer}>
           <Coins size={24} color={colors.warning} />
-          <Text style={styles.coinsText}>{userCoins}</Text>
+          <Text style={styles.coinsText}>{profileData?.marathonPoints || userCoins}</Text>
         </View>
       </View>
 
