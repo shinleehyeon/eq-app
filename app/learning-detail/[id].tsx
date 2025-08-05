@@ -103,27 +103,23 @@ export default function LearningDetailScreen() {
     fetchLearningData();
   }, [id, accessToken]);
 
-  // 퀴즈 데이터 가져오기
   useEffect(() => {
     const fetchQuizData = async () => {
       if (!id || !accessToken) return;
 
       try {
-        // 퀴즈 풀이 여부 확인
         const solvedResponse = await apiClient.checkQuizSolvedByArticle(
           id as string,
           accessToken
         );
         if (solvedResponse.success && solvedResponse.data) {
           setQuizSolved(solvedResponse.data.isSolved);
-          // 이미 퀴즈를 풀었고 정답인 경우 완료 상태로 설정
           if (solvedResponse.data.isSolved && solvedResponse.data.isCorrect) {
             setQuizCompleted(true);
             setIsCorrect(true);
           }
         }
 
-        // 퀴즈 데이터 가져오기
         try {
           const quizResponse = await apiClient.getLearningQuizByArticleId(
             id as string,
@@ -133,7 +129,7 @@ export default function LearningDetailScreen() {
             setQuiz(quizResponse.data.quiz);
           }
         } catch (error) {
-          console.log("이 학습 글에는 퀴즈가 없습니다.");
+          console.log("This learning article has no quiz.");
         }
       } catch (error) {
         console.error("Error fetching quiz:", error);
@@ -148,7 +144,6 @@ export default function LearningDetailScreen() {
       if (!learning?.article?.category) return;
 
       try {
-        // 같은 카테고리의 관련 learning 가져오기 (타입을 articles로 고정)
         const response = await apiClient.getLearningList(
           "articles",
           1,
@@ -170,7 +165,6 @@ export default function LearningDetailScreen() {
     fetchRelatedLearnings();
   }, [learning?.article?.category, id, accessToken]);
 
-  // Video 타입일 때 30초 타이머
   useEffect(() => {
     if (
       !learning?.article ||
@@ -183,7 +177,6 @@ export default function LearningDetailScreen() {
       setVideoWatchTime((prev) => {
         const newTime = prev + 1;
         if (newTime >= 30) {
-          // 30초 도달 시 퀘스트 완료 요청
           completeVideoQuest();
           return newTime;
         }
@@ -206,24 +199,23 @@ export default function LearningDetailScreen() {
 
       if (response.success) {
         setVideoQuestCompleted(true);
-        Alert.alert("퀘스트 완료!", "비디오 시청 퀘스트가 완료되었습니다!");
+        Alert.alert("Quest Complete!", "Video watching quest has been completed!");
       } else {
-        // 퀘스트가 활성화되지 않은 경우
-        if (response.error?.includes("활성화되지 않아")) {
+        if (response.error?.includes("not activated")) {
           Alert.alert(
-            "퀘스트 미활성화",
-            "이 영상의 퀘스트가 활성화되지 않았습니다. 퀘스트를 선택한 후 다시 시도해주세요."
+            "Quest Not Activated",
+            "This video's quest is not activated. Please select a quest and try again."
           );
         } else {
           Alert.alert(
-            "오류",
-            response.error || "퀘스트 완료 중 오류가 발생했습니다."
+            "Error",
+            response.error || "An error occurred while completing the quest."
           );
         }
       }
     } catch (error) {
       console.error("Error completing video quest:", error);
-      Alert.alert("오류", "퀘스트 완료 중 오류가 발생했습니다.");
+      Alert.alert("Error", "An error occurred while completing the quest.");
     }
   };
 
@@ -342,34 +334,31 @@ export default function LearningDetailScreen() {
         setIsCorrect(correct);
 
         if (correct) {
-          // 정답인 경우 퀴즈 완료 처리
           setQuizCompleted(true);
           setQuizSolved(true);
 
-          // Show result after a short delay
           setTimeout(() => {
-            const rewardText = `\n\n🎉 보상 획득!\n마라톤 포인트: +${response.data.earnedMarathonPoints}\n경험치: +${response.data.earnedExperience}`;
+            const rewardText = `\n\n🎉 Rewards Earned!\nMarathon Points: +${response.data?.earnedMarathonPoints}\nExperience: +${response.data?.earnedExperience}`;
 
             Alert.alert(
-              "정답입니다! 🎉",
-              `훌륭합니다! 이 학습의 핵심을 잘 이해하셨네요.${rewardText}`,
-              [{ text: "확인" }]
+              "Correct! 🎉",
+              `Excellent! You understood the key points of this learning well.${rewardText}`,
+              [{ text: "OK" }]
             );
           }, 500);
         } else {
-          // 틀린 경우 다시 시도할 수 있도록
           setTimeout(() => {
-            Alert.alert("틀렸습니다 😔", `다시 시도해보세요!`, [
-              { text: "다시 시도" },
+            Alert.alert("Incorrect 😔", `Please try again!`, [
+              { text: "Try Again" },
             ]);
           }, 500);
         }
       } else {
-        Alert.alert("오류", "퀴즈 제출에 실패했습니다.");
+        Alert.alert("Error", "Failed to submit quiz.");
       }
     } catch (error) {
       console.error("Error submitting quiz:", error);
-      Alert.alert("오류", "퀴즈 제출 중 오류가 발생했습니다.");
+      Alert.alert("Error", "An error occurred while submitting the quiz.");
     } finally {
       setQuizLoading(false);
     }
@@ -443,7 +432,6 @@ export default function LearningDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Media Section */}
         {renderVideoPlayer() ||
           (learning.article.thumbnail ? (
             <Image
@@ -452,7 +440,6 @@ export default function LearningDetailScreen() {
               resizeMode="cover"
             />
           ) : (
-            // Show a category-themed placeholder for learnings without images
             <View
               style={[
                 styles.placeholderContainer,
@@ -533,33 +520,32 @@ export default function LearningDetailScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Video 타입이 아닌 경우에만 퀴즈 표시 */}
           {quiz && learning?.article?.type !== "videos" && (
             <View style={styles.quizContainer}>
               {quizSolved && isCorrect ? (
                 <View style={styles.quizCompletedContainer}>
                   <Text style={styles.quizCompletedText}>
-                    ✅ 정답을 맞췄습니다!
+                    ✅ Correct answer!
                   </Text>
                   <Text style={styles.quizCompletedSubtext}>
-                    보상: 마라톤 포인트 +{quiz.rewardMarathonPoints}, 경험치 +
+                    Rewards: Marathon Points +{quiz.rewardMarathonPoints}, Experience +
                     {quiz.rewardExperience}
                   </Text>
                 </View>
               ) : quizSolved && !isCorrect ? (
                 <View style={styles.quizIncorrectContainer}>
                   <Text style={styles.quizIncorrectText}>
-                    ❌ 퀴즈를 풀었지만 틀렸습니다
+                    ❌ Quiz completed but incorrect
                   </Text>
                   <Text style={styles.quizIncorrectSubtext}>
-                    다시 시도해서 정답을 맞춰보세요!
+                    Try again to get the correct answer!
                   </Text>
                 </View>
               ) : (
                 <>
-                  <Text style={styles.quizTitle}>지식 테스트</Text>
+                  <Text style={styles.quizTitle}>Knowledge Test</Text>
                   <Text style={styles.quizDescription}>
-                    이 학습 내용의 핵심을 이해했는지 확인해보세요!
+                    Check if you understood the key points of this learning content!
                   </Text>
 
                   {!showQuiz ? (
@@ -567,7 +553,7 @@ export default function LearningDetailScreen() {
                       style={styles.startQuizButton}
                       onPress={() => setShowQuiz(true)}
                     >
-                      <Text style={styles.startQuizButtonText}>퀴즈 시작</Text>
+                      <Text style={styles.startQuizButtonText}>Start Quiz</Text>
                     </TouchableOpacity>
                   ) : (
                     <View style={styles.quizContent}>
@@ -585,7 +571,6 @@ export default function LearningDetailScreen() {
                                   : isCorrect === false
                                   ? styles.incorrectOption
                                   : styles.selectedOption),
-                              // 정답인 경우 정답 옵션도 초록색으로 표시
                               quizCompleted &&
                                 isCorrect === false &&
                                 index === quiz.correctAnswerIndex &&
@@ -600,7 +585,6 @@ export default function LearningDetailScreen() {
                                 selectedAnswer === index &&
                                   quizCompleted &&
                                   styles.selectedOptionText,
-                                // 정답인 경우 정답 옵션 텍스트도 강조
                                 quizCompleted &&
                                   isCorrect === false &&
                                   index === quiz.correctAnswerIndex &&
@@ -615,7 +599,7 @@ export default function LearningDetailScreen() {
 
                       {quizLoading && (
                         <View style={styles.quizLoadingContainer}>
-                          <Text style={styles.quizLoadingText}>제출 중...</Text>
+                          <Text style={styles.quizLoadingText}>Submitting...</Text>
                         </View>
                       )}
 
@@ -625,7 +609,7 @@ export default function LearningDetailScreen() {
                           onPress={resetQuiz}
                         >
                           <Text style={styles.resetQuizButtonText}>
-                            다시 풀기
+                            Retake Quiz
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -636,7 +620,7 @@ export default function LearningDetailScreen() {
                           onPress={retryQuiz}
                         >
                           <Text style={styles.retryQuizButtonText}>
-                            다시 시도하기
+                            Try Again
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -647,30 +631,29 @@ export default function LearningDetailScreen() {
             </View>
           )}
 
-          {/* Video 타입일 때 30초 타이머 표시 */}
           {learning?.article?.type === "videos" && (
             <View style={styles.quizContainer}>
-              <Text style={styles.quizTitle}>영상 시청하기</Text>
+              <Text style={styles.quizTitle}>Watch Video</Text>
               <Text style={styles.quizDescription}>
-                영상을 시청하여 학습을 완료하세요!
+                Complete your learning by watching the video!
               </Text>
 
               {videoQuestCompleted ? (
                 <View style={styles.quizCompletedContainer}>
                   <Text style={styles.quizCompletedText}>
-                    ✅ 비디오 시청 완료!
+                    ✅ Video watch completed!
                   </Text>
                   <Text style={styles.quizCompletedSubtext}>
-                    퀘스트가 완료되었습니다!
+                    Quest has been completed!
                   </Text>
                 </View>
               ) : (
                 <View style={styles.videoTimerContainer}>
                   <Text style={styles.videoTimerText}>
-                    {30 - videoWatchTime}초 남음
+                    {30 - videoWatchTime} seconds left
                   </Text>
                   <Text style={styles.videoTimerSubtext}>
-                    30초간 시청하면 퀘스트가 완료됩니다
+                    Quest will be completed after watching for 30 seconds
                   </Text>
                 </View>
               )}
