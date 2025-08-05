@@ -363,7 +363,11 @@ export default function MarathonDetailScreen() {
                 const prevPos = getPosition(prevMilestone.row, prevMilestone.col);
                 const currPos = getPosition(milestone.row, milestone.col);
                 
-                const isCompleted = currentProgress >= milestone.distance;
+                const progress = (marathonProgress?.progress || 0) / 100;
+                const totalSegments = milestones.length - 1;
+                const pathProgressPosition = Math.min((progress + 0.04) * totalDistance, totalDistance);
+                const milestoneDistance = (index / totalSegments) * totalDistance;
+                const isCompleted = milestoneDistance <= pathProgressPosition;
                 const strokeColor = isCompleted ? colors.success : "#9CA3AF";
                 
                 let segmentPath;
@@ -440,8 +444,13 @@ export default function MarathonDetailScreen() {
               if (index === 0) return null;
               const prev = milestones[index - 1];
               
-              if (currentProgress >= prev.distance && currentProgress <= milestone.distance) {
-                const t = (currentProgress - prev.distance) / (milestone.distance - prev.distance);
+              const progress = (marathonProgress?.progress || 0) / 100;
+              const petProgressDistance = progress * totalDistance;
+              const prevDistance = prev.distance;
+              const currDistance = milestone.distance;
+              
+              if (petProgressDistance >= prevDistance && petProgressDistance <= currDistance) {
+                const t = (petProgressDistance - prevDistance) / (currDistance - prevDistance);
                 const prevPos = getPosition(prev.row, prev.col);
                 const currPos = getPosition(milestone.row, milestone.col);
                 
