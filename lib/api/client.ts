@@ -519,4 +519,20 @@ export const apiClient = {
   async adoptPet(petData: AdoptPetRequest, token?: string): Promise<ApiResponse<AdoptPetResponse>> {
     return this.post<AdoptPetResponse>('/pets/adopt', petData, token);
   },
+
+  async getMainPet(token?: string): Promise<ApiResponse<GetMainPetResponse>> {
+    return this.get<GetMainPetResponse>('/pets/main', token);
+  },
+
+  async getPetDetail(petUuid: string, token?: string): Promise<ApiResponse<GetPetDetailResponse>> {
+    return this.get<GetPetDetailResponse>(`/pets/${petUuid}`, token);
+  },
+
+  async setMainPet(petId: string, token?: string): Promise<ApiResponse<SetMainPetResponse>> {
+    return this.post<SetMainPetResponse>('/pets/main', { petId }, token);
+  },
+
+  async getUserPets(token?: string): Promise<ApiResponse<GetUserPetsResponse>> {
+    return this.get<GetUserPetsResponse>('/pets/', token);
+  },
 };

@@ -103,7 +103,7 @@ export default function ShopScreen() {
 
         if (userPetsResult.success && userPetsResult.data) {
           const uuidMap = new Map<string, string>();
-          userPetsResult.data.data.forEach(pet => {
+          userPetsResult.data.data.forEach((pet: any) => {
             uuidMap.set(pet.type, pet.uuid);
           });
           setPetUuidMap(uuidMap);
