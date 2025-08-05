@@ -44,21 +44,48 @@ export interface User {
   }
   
   export interface Quest {
-    id: string;
+    uuid: string;
     title: string;
     description: string;
-    category: string;
+    status: 'pending' | 'completed' | 'failed';
+    targetValue: number;
+    currentValue: number;
+    rewardMarathonPoints: number;
+    rewardExperience: number;
+    startDate: string;
+    endDate: string;
+    completedAt: string | null;
+    mainImageUrl?: string;
+    completionImageUrl: string | null;
+    successImageUrl: string | null;
+    requiredObject: string;
     difficulty: 'easy' | 'medium' | 'hard';
-    points?: number;
-    duration: number; // in days
-    steps?: string[];
-    imageUrl: string;
-    completionCriteria?: string;
-    impact?: string | {
-      co2Reduction?: number;
-      waterSaved?: number;
-      energySaved?: number;
+    category: string;
+    environmentalImpact: string;
+    expectedTime: string;
+    userId: string;
+    marathonEventId: string | null;
+    isSelected?: boolean;
+    questType?: string;
+    requiredCount?: number | null;
+    subType?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    user: {
+      uuid: string;
+      name: string;
+      profileImage: string | null;
     };
+    marathonEvent: any | null;
+    
+    // Legacy fields for compatibility
+    id?: string;
+    points?: number;
+    duration?: number; // in days
+    steps?: string[];
+    imageUrl?: string;
+    completionCriteria?: string;
+    impact?: string;
     tips?: string[];
     relatedQuests?: string[];
     isCollaborative?: boolean;

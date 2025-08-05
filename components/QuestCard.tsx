@@ -4,13 +4,13 @@ import { Sparkles, Coins, Users, Timer, MapPin, Star } from 'lucide-react-native
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { fetchAuthorById } from '@/utils/firebase-helpers';
-import { database } from '@/config/firebase';
-import { ref, get } from 'firebase/database';
+
+import { Quest } from '@/types';
 
 interface QuestCardProps {
-  challenge: any;
+  challenge: Quest;
   isActive: boolean;
-  onPress: (quest: any) => void;
+  onPress: (quest: Quest) => void;
   showAuthor?: boolean;
   onSelect?: (questId: string) => void;
   onUnselect?: (questId: string) => void;
@@ -33,7 +33,6 @@ export default function QuestCard({
   selectable = false 
 }: QuestCardProps) {
   const [author, setAuthor] = useState<Author | null>(null);
-  const [submissionCount, setSubmissionCount] = useState(0);
   
   // Fetch author data directly from Firebase when needed
   useEffect(() => {
@@ -46,33 +45,15 @@ export default function QuestCard({
     }
   }, [challenge.authorId, showAuthor]);
 
-  // Fetch submission count
-  useEffect(() => {
-    const fetchSubmissionCount = async () => {
-      try {
-        const submissionsRef = ref(database, 'questSubmissions');
-        const snapshot = await get(submissionsRef);
-        
-        if (snapshot.exists()) {
-          const submissions = Object.values(snapshot.val());
-          const count = submissions.filter(
-            (submission: any) => submission.questId === challenge.id
-          ).length;
-          setSubmissionCount(count);
-        }
-      } catch (error) {
-        console.error('Error fetching submission count:', error);
-      }
-    };
-
-    fetchSubmissionCount();
-  }, [challenge.id]);
+  // Skip submission count for now due to Firebase permissions
+  // This can be enabled later when Firebase rules are properly configured
 
   // Calculate days left for submission deadline
   const getDaysLeft = () => {
-    if (!challenge.submissionDeadline) return null;
+    const deadline = challenge.endDate || challenge.submissionDeadline;
+    if (!deadline) return null;
     
-    const deadlineDate = new Date(challenge.submissionDeadline);
+    const deadlineDate = new Date(deadline);
     const currentDate = new Date();
     
     // Calculate the difference in milliseconds
@@ -123,9 +104,9 @@ export default function QuestCard({
   const handlePress = () => {
     if (selectable) {
       if (isActive && onUnselect) {
-        onUnselect(challenge.id);
+        onUnselect(challenge.uuid || challenge.id!);
       } else if (!isActive && onSelect) {
-        onSelect(challenge.id);
+        onSelect(challenge.uuid || challenge.id!);
       }
     } else {
       onPress(challenge);
@@ -142,7 +123,7 @@ export default function QuestCard({
         {/* Left side - Image */}
         <View style={styles.imageContainer}>
           <Image 
-            source={{ uri: challenge.imageUrl }} 
+            source={{ uri: challenge.mainImageUrl || challenge.imageUrl || 'https://images.unsplash.com/photo-1530587191325-3db32d826c18' }} 
             style={styles.image}
             resizeMode="cover"
           />
@@ -170,18 +151,18 @@ export default function QuestCard({
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Coins size={12} color={colors.warning} />
-              <Text style={styles.statText}>{challenge.points}</Text>
+              <Text style={styles.statText}>{challenge.rewardMarathonPoints || challenge.points || 0}</Text>
             </View>
             
             <View style={styles.statItem}>
               <Timer size={12} color={colors.info} />
-              <Text style={styles.statText}>{challenge.duration || 30}m</Text>
+              <Text style={styles.statText}>{challenge.expectedTime || `${challenge.duration || 30}m`}</Text>
             </View>
             
-            {showAuthor && author && (
+            {showAuthor && (challenge.user || author) && (
               <View style={styles.statItem}>
                 <Users size={12} color={colors.textSecondary} />
-                <Text style={styles.statText}>{author.name}</Text>
+                <Text style={styles.statText}>{challenge.user?.name || author?.name}</Text>
               </View>
             )}
           </View>

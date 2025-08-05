@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Quest, QuestCategory } from '@/types';
-import mockChallenges from '@/mocks/challenges';
 
 interface QuestsState {
   dailyQuests: Quest[];
@@ -44,17 +43,22 @@ export const useQuestsStore = create<QuestsState>()(
       fetchDailyQuests: async () => {
         set({ isLoading: true, error: null });
         try {
-          // Use mock data instead of API
-          const dailyQuests = mockChallenges.slice(0, 4) as Quest[];
-          const validQuests = dailyQuests.map(quest => ({
-            ...quest,
-            difficulty: quest.difficulty || 'medium',
-            category: quest.category || 'other',
-            completedBy: quest.completedBy || 0,
-            steps: quest.steps || [],
-            impact: quest.impact || 'Help make a positive environmental impact',
-          }));
-          set(state => ({ dailyQuests: validQuests, isLoading: false }));
+          const response = await fetch('https://eqapi.juany.kr/quests?page=1&limit=10', {
+            headers: {
+              'accept': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          // For now, show all quests as daily quests
+          const dailyQuests = result.data || [];
+          
+          set({ dailyQuests, isLoading: false });
         } catch (error) {
           set({ 
             error: error instanceof Error ? error.message : 'Failed to fetch daily quests', 
@@ -66,17 +70,22 @@ export const useQuestsStore = create<QuestsState>()(
       fetchOpenQuests: async () => {
         set({ isLoading: true, error: null });
         try {
-          // Use mock data instead of API
-          const openQuests = mockChallenges.slice(4) as Quest[];
-          const validQuests = openQuests.map(quest => ({
-            ...quest,
-            difficulty: quest.difficulty || 'medium',
-            category: quest.category || 'other',
-            completedBy: quest.completedBy || 0,
-            steps: quest.steps || [],
-            impact: quest.impact || 'Help make a positive environmental impact',
-          }));
-          set(state => ({ openQuests: validQuests, isLoading: false }));
+          const response = await fetch('https://eqapi.juany.kr/quests?page=1&limit=50', {
+            headers: {
+              'accept': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          // For now, use empty array for open quests since we don't have questType
+          const openQuests: Quest[] = [];
+          
+          set({ openQuests, isLoading: false });
         } catch (error) {
           set({ 
             error: error instanceof Error ? error.message : 'Failed to fetch open quests', 
@@ -90,8 +99,8 @@ export const useQuestsStore = create<QuestsState>()(
         if (activeQuests.includes(questId)) return;
         
         try {
-          // Find quest in mock data
-          const quest = [...dailyQuests, ...openQuests].find(q => q.id === questId);
+          // Find quest in state data
+          const quest = [...dailyQuests, ...openQuests].find(q => q.uuid === questId);
           if (!quest) {
             throw new Error('Quest not found');
           }
@@ -119,12 +128,12 @@ export const useQuestsStore = create<QuestsState>()(
           // Create quest locally with mock data
           const newQuest = {
             ...quest,
-            id: `quest_${Date.now()}`,
+            uuid: `quest_${Date.now()}`,
           };
           set(state => ({
             openQuests: [...state.openQuests, newQuest as Quest]
           }));
-          return newQuest.id;
+          return newQuest.uuid;
         } catch (error) {
           set({ 
             error: error instanceof Error ? error.message : 'Failed to create quest' 

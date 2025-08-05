@@ -51,8 +51,8 @@ export default function QuestsScreen() {
   
   // Combine all quests and separate selected and available
   const allQuests = [...dailyQuests, ...openQuests];
-  const selectedQuests = allQuests.filter(quest => activeQuests.includes(quest.id));
-  const availableQuests = allQuests.filter(quest => !activeQuests.includes(quest.id));
+  const selectedQuests = allQuests.filter(quest => activeQuests.includes(quest.uuid || quest.id!));
+  const availableQuests = allQuests.filter(quest => !activeQuests.includes(quest.uuid || quest.id!));
   
   return (
     <SafeAreaView style={styles.container}>
@@ -80,9 +80,9 @@ export default function QuestsScreen() {
             
             {selectedQuests.map(quest => (
               <QuestCard 
-                key={quest.id}
+                key={quest.uuid || quest.id}
                 challenge={quest}
-                onPress={() => router.push(`/quest-detail?id=${quest.id}`)}
+                onPress={() => router.push(`/quest-detail?id=${quest.uuid || quest.id}`)}
                 showAuthor={false}
                 isActive={true}
               />
@@ -104,10 +104,10 @@ export default function QuestsScreen() {
 
           {availableQuests.map(quest => (
             <QuestCard 
-              key={quest.id}
+              key={quest.uuid || quest.id}
               challenge={quest}
               isActive={false}
-              onPress={() => router.push(`/quest-detail?id=${quest.id}`)}
+              onPress={() => router.push(`/quest-detail?id=${quest.uuid || quest.id}`)}
               showAuthor={false}
             />
           ))}
