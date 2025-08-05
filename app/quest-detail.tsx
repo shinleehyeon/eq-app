@@ -33,6 +33,7 @@ import * as ImagePicker from "expo-image-picker";
 import Button from "@/components/Button";
 import { useQuestsStore } from "@/store/challenges-store";
 import { useUserStore } from "@/store/user-store";
+import { apiClient } from "@/lib/api/client";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -50,12 +51,13 @@ export default function QuestDetailScreen() {
     selectQuest,
     unselectQuest,
   } = useQuestsStore();
-  const { user } = useUserStore();
+  const { user, accessToken } = useUserStore();
 
   const [showProofModal, setShowProofModal] = useState(false);
   const [proofText, setProofText] = useState("");
   const [proofImage, setProofImage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectingQuest, setSelectingQuest] = useState(false);
 
   const quest = [...dailyQuests, ...openQuests].find((q) => q.uuid === questId);
   const isActive = activeQuests.includes(questId);
@@ -70,11 +72,35 @@ export default function QuestDetailScreen() {
     );
   }
 
-  const handleSelectQuest = () => {
-    if (isActive) {
-      unselectQuest(questId);
-    } else if (canSelectMore) {
-      selectQuest(questId);
+  const handleSelectQuest = async () => {
+    if (!accessToken) {
+      Alert.alert("Authentication Required", "Please log in to select quests.");
+      return;
+    }
+
+    setSelectingQuest(true);
+
+    try {
+      if (isActive) {
+        // Remove quest - could add API call here if needed
+        unselectQuest(questId);
+        Alert.alert("Success", "Quest removed from your active quests.");
+      } else if (canSelectMore) {
+        // Select quest via API
+        const response = await apiClient.post(`/quests/${questId}/select`, {}, accessToken);
+        
+        if (response.success) {
+          selectQuest(questId);
+          Alert.alert("Success", "Quest added to your active quests!");
+        } else {
+          Alert.alert("Error", response.error || "Failed to select quest");
+        }
+      }
+    } catch (error) {
+      console.error("Error selecting quest:", error);
+      Alert.alert("Error", "Failed to select quest. Please try again.");
+    } finally {
+      setSelectingQuest(false);
     }
   };
 
@@ -242,19 +268,36 @@ export default function QuestDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Action Button */}
+      {/* Action Buttons */}
       <View style={styles.actionContainer}>
         {isCompleted ? (
           <View style={styles.completedBadge}>
             <CheckCircle size={20} color={colors.success} />
             <Text style={styles.completedText}>Quest Completed!</Text>
           </View>
-        ) : (
+        ) : !isActive ? (
           <Button
-            title="Submit Proof"
-            onPress={handleCompleteQuest}
-            style={styles.completeButton}
+            title={selectingQuest ? "Selecting..." : "Select Quest"}
+            onPress={handleSelectQuest}
+            style={[
+              styles.singleButton,
+              (!canSelectMore || selectingQuest) && styles.disabledButton
+            ]}
+            disabled={!canSelectMore || selectingQuest}
           />
+        ) : (
+          <View style={styles.buttonRow}>
+            <Button
+              title="Remove Quest"
+              onPress={handleSelectQuest}
+              style={[styles.selectButton, styles.removeButton]}
+            />
+            <Button
+              title="Complete Quest"
+              onPress={handleCompleteQuest}
+              style={styles.completeButton}
+            />
+          </View>
         )}
       </View>
 
@@ -496,7 +539,6 @@ const styles = StyleSheet.create({
   completeButton: {
     flex: 1,
     backgroundColor: colors.success,
-    marginBottom: 16,
     paddingVertical: 16,
   },
   completedBadge: {
@@ -600,5 +642,27 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: "100%",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  singleButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    marginBottom: 16,
+  },
+  selectButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+  },
+  removeButton: {
+    backgroundColor: colors.error,
+  },
+  disabledButton: {
+    backgroundColor: colors.textSecondary,
+    opacity: 0.6,
   },
 });
