@@ -91,6 +91,9 @@ export default function MarathonsScreen() {
         const newMarathons = response.data.data || [];
         const pagination = response.data.pagination;
 
+        console.log('Marathon data:', newMarathons);
+        console.log('First marathon eventImage:', newMarathons[0]?.eventImage);
+
         if (refresh) {
           setMarathons(newMarathons);
         } else {
@@ -209,9 +212,17 @@ export default function MarathonsScreen() {
                 activeOpacity={0.7}
               >
                 <Image
-                  source={{ uri: marathon.eventImage }}
+                  source={
+                    marathon.eventImage 
+                      ? { uri: marathon.eventImage }
+                      : require('@/assets/images/ad.png')
+                  }
                   style={styles.marathonImage}
                   resizeMode="cover"
+                  onError={(error) => {
+                    console.log('Image loading error:', error.nativeEvent.error);
+                    console.log('Image URL:', marathon.eventImage);
+                  }}
                 />
 
                 <View style={styles.cardContent}>
