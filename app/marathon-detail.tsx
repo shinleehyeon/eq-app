@@ -105,14 +105,16 @@ export default function MarathonDetailScreen() {
   const getSelectedPetAnimation = () => {
     switch(selectedPet) {
       case 'bird':
+      case 'parrot':
         return require('@/assets/animation/bird.json');
       case 'duck':
         return require('@/assets/animation/duck.json');
       case 'giraffe':
         return require('@/assets/animation/giraffe.json');
       case 'turtle':
-      default:
         return require('@/assets/animation/turtle.json');
+      default:
+        return require('@/assets/animation/bird.json');
     }
   };
   
@@ -416,7 +418,7 @@ export default function MarathonDetailScreen() {
                     isCurrent && styles.currentMilestone
                   ]}>
                     <Icon 
-                      size={16} 
+                      size={14} 
                       color={milestoneCompleted || isCurrent ? 'white' : colors.textSecondary} 
                     />
                   </View>
@@ -475,7 +477,11 @@ export default function MarathonDetailScreen() {
                       source={getSelectedPetAnimation()}
                       autoPlay
                       loop
-                      style={styles.petAnimation}
+                      style={
+                        selectedPet === 'turtle' ? styles.petAnimation : 
+                        selectedPet === 'parrot' ? styles.petAnimationSky :
+                        styles.petAnimationLarge
+                      }
                     />
                   </View>
                 );
@@ -683,9 +689,9 @@ const styles = StyleSheet.create({
     width: 40,
   },
   milestoneCircle: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
@@ -702,8 +708,8 @@ const styles = StyleSheet.create({
     borderColor: '#22C55E',
   },
   currentMilestone: {
-    backgroundColor: colors.warning,
-    borderColor: colors.warning,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
     transform: [{ scale: 1.1 }],
   },
   milestoneText: {
@@ -727,6 +733,14 @@ const styles = StyleSheet.create({
   petAnimation: {
     width: 50,
     height: 50,
+  },
+  petAnimationLarge: {
+    width: 70,
+    height: 70,
+  },
+  petAnimationSky: {
+    width: 60,
+    height: 60,
   },
   bottomSection: {
     paddingHorizontal: 20,
