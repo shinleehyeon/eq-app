@@ -33,6 +33,7 @@ interface LearningItem {
   title: string;
   content: string;
   category: string;
+  type: string;
   difficulty: string;
   status: string;
   thumbnail: string;
@@ -69,6 +70,8 @@ export default function LearningDetailScreen() {
   const [quiz, setQuiz] = useState<any>(null);
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizSolved, setQuizSolved] = useState(false);
+  const [videoWatchTime, setVideoWatchTime] = useState(0);
+  const [videoQuestCompleted, setVideoQuestCompleted] = useState(false);
 
   useEffect(() => {
     const fetchLearningData = async () => {
@@ -166,6 +169,63 @@ export default function LearningDetailScreen() {
 
     fetchRelatedLearnings();
   }, [learning?.article?.category, id, accessToken]);
+
+  // Video 타입일 때 30초 타이머
+  useEffect(() => {
+    if (
+      !learning?.article ||
+      learning.article.type !== "videos" ||
+      videoQuestCompleted
+    )
+      return;
+
+    const timer = setInterval(() => {
+      setVideoWatchTime((prev) => {
+        const newTime = prev + 1;
+        if (newTime >= 30) {
+          // 30초 도달 시 퀘스트 완료 요청
+          completeVideoQuest();
+          return newTime;
+        }
+        return newTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [learning?.article, videoQuestCompleted]);
+
+  const completeVideoQuest = async () => {
+    if (!accessToken || !learning?.article) return;
+
+    try {
+      const response = await apiClient.post(
+        `/quests/completed-watch-video`,
+        {},
+        accessToken
+      );
+
+      if (response.success) {
+        setVideoQuestCompleted(true);
+        Alert.alert("퀘스트 완료!", "비디오 시청 퀘스트가 완료되었습니다!");
+      } else {
+        // 퀘스트가 활성화되지 않은 경우
+        if (response.error?.includes("활성화되지 않아")) {
+          Alert.alert(
+            "퀘스트 미활성화",
+            "이 영상의 퀘스트가 활성화되지 않았습니다. 퀘스트를 선택한 후 다시 시도해주세요."
+          );
+        } else {
+          Alert.alert(
+            "오류",
+            response.error || "퀘스트 완료 중 오류가 발생했습니다."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error completing video quest:", error);
+      Alert.alert("오류", "퀘스트 완료 중 오류가 발생했습니다.");
+    }
+  };
 
   const getYouTubeVideoId = (url: string) => {
     const regex = /(?:\?v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/;
@@ -473,7 +533,8 @@ export default function LearningDetailScreen() {
             </TouchableOpacity>
           )}
 
-          {quiz && (
+          {/* Video 타입이 아닌 경우에만 퀴즈 표시 */}
+          {quiz && learning?.article?.type !== "videos" && (
             <View style={styles.quizContainer}>
               {quizSolved && isCorrect ? (
                 <View style={styles.quizCompletedContainer}>
@@ -582,6 +643,36 @@ export default function LearningDetailScreen() {
                     </View>
                   )}
                 </>
+              )}
+            </View>
+          )}
+
+          {/* Video 타입일 때 30초 타이머 표시 */}
+          {learning?.article?.type === "videos" && (
+            <View style={styles.quizContainer}>
+              <Text style={styles.quizTitle}>영상 시청하기</Text>
+              <Text style={styles.quizDescription}>
+                영상을 시청하여 학습을 완료하세요!
+              </Text>
+
+              {videoQuestCompleted ? (
+                <View style={styles.quizCompletedContainer}>
+                  <Text style={styles.quizCompletedText}>
+                    ✅ 비디오 시청 완료!
+                  </Text>
+                  <Text style={styles.quizCompletedSubtext}>
+                    퀘스트가 완료되었습니다!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.videoTimerContainer}>
+                  <Text style={styles.videoTimerText}>
+                    {30 - videoWatchTime}초 남음
+                  </Text>
+                  <Text style={styles.videoTimerSubtext}>
+                    30초간 시청하면 퀘스트가 완료됩니다
+                  </Text>
+                </View>
               )}
             </View>
           )}
@@ -993,6 +1084,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   quizIncorrectSubtext: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+  videoTimerContainer: {
+    backgroundColor: colors.primary + "20",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  videoTimerText: {
+    ...typography.heading3,
+    color: colors.primary,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  videoTimerSubtext: {
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: "center",
