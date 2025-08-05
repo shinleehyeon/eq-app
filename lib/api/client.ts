@@ -321,7 +321,6 @@ interface GetUserPetsResponse {
   };
 }
 
-// Learning Quiz Interfaces
 interface LearningQuizDto {
   uuid: string;
   title: string;
@@ -376,6 +375,13 @@ interface UseItemResponse {
   gainedExperience: number;
   leveledUp: boolean;
   userExperienceGained: number;
+}
+
+interface HomeDataResponse {
+  activeDailyQuests: number;
+  completedDailyQuests: number;
+  totalPetItems: number;
+  activeMarathonName: string | null;
 }
 
 export const apiClient = {
@@ -644,7 +650,6 @@ export const apiClient = {
     return this.get<GetUserPetsResponse>("/pets/", token);
   },
 
-  // Learning Quiz APIs
   async getLearningQuizByArticleId(
     articleId: string,
     token?: string
@@ -687,5 +692,9 @@ export const apiClient = {
       { petId, itemName },
       token
     );
+  },
+
+  async getHomeData(token?: string): Promise<ApiResponse<HomeDataResponse>> {
+    return this.get<HomeDataResponse>("/root/home", token);
   },
 };
