@@ -13,10 +13,9 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useQuestsStore } from '@/store/challenges-store';
 import { useUserStore } from '@/store/user-store';
-import QuestCard from '@/components/QuestCard'; // Use the correct QuestCard component
+import QuestCard from '@/components/QuestCard';
 import { ArrowRight, Sparkles, Globe } from 'lucide-react-native';
 
-// Update the OpenQuest interface 
 interface OpenQuest {
   id: string;
   title: string;
@@ -27,7 +26,7 @@ interface OpenQuest {
   difficulty: string;
   isCreativeChallenge: boolean;
   points: number;
-  authorId: string; // ID of the author (using authorId instead of userId)
+  authorId: string;
 }
 
 export default function QuestsScreen() {
@@ -41,15 +40,13 @@ export default function QuestsScreen() {
     selectQuest,
     unselectQuest
   } = useQuestsStore();
-  const { users } = useUserStore(); // Add users to access author information
+  const { users } = useUserStore();
   
   useEffect(() => {
-    // Fetch both types of quests on mount
     fetchDailyQuests();
     fetchOpenQuests();
   }, []);
   
-  // Combine all quests and separate selected and available
   const allQuests = [...dailyQuests, ...openQuests];
   const selectedQuests = allQuests.filter(quest => activeQuests.includes(quest.uuid || quest.id!));
   const availableQuests = allQuests.filter(quest => !activeQuests.includes(quest.uuid || quest.id!));
