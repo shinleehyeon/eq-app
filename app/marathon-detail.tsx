@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,20 +9,94 @@ import {
   SafeAreaView,
   Image
 } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { Trophy, ChevronRight, MapPin, Flag, Star, Crown, Coins } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
+import { apiClient } from '@/lib/api/client';
 
 const { width } = Dimensions.get('window');
 
+interface MarathonSpot {
+  uuid: string;
+  name: string;
+  description: string;
+  milestoneOrder: number;
+  requiredQuestPoints: number;
+  marathonPointsBonus: number;
+  experienceBonus: number;
+  milestoneImage: string;
+  createdAt: string;
+}
+
+interface Marathon {
+  uuid: string;
+  title: string;
+  description: string;
+  status: "active" | "upcoming" | "completed";
+  startDate: string;
+  endDate: string;
+  requiredQuestPoints: number;
+  finalMarathonPoints: number;
+  finalExperience: number;
+  eventImage: string;
+  organizer: {
+    uuid: string;
+    name: string;
+    profileImage: string;
+  };
+  participantCount: number;
+  spots: MarathonSpot[];
+  createdAt: string;
+}
+
+interface MarathonProgress {
+  currentQuestPoints: number;
+  nextMilestoneName: string;
+  remainingQuestPoints: number;
+  nextMilestoneReward: number;
+  progress: number;
+  reachedMilestones: number;
+  totalMilestones: number;
+}
+
 export default function MarathonDetailScreen() {
-  const { selectedPet } = useUserStore();
-  const [currentProgress, setCurrentProgress] = useState(4.2); 
+  const { selectedPet, accessToken } = useUserStore();
+  const { id } = useLocalSearchParams();
+  const [marathon, setMarathon] = useState<Marathon | null>(null);
+  const [marathonProgress, setMarathonProgress] = useState<MarathonProgress | null>(null);
+  const [loading, setLoading] = useState(true);
   const totalDistance = 10;
+
+  useEffect(() => {
+    if (id) {
+      fetchMarathonData();
+    }
+  }, [id]);
+
+  const fetchMarathonData = async () => {
+    try {
+      const [marathonResponse, progressResponse] = await Promise.all([
+        apiClient.get(`/marathons/${id}`, accessToken || undefined),
+        apiClient.get(`/marathons/${id}/progress`, accessToken || undefined)
+      ]);
+
+      if (marathonResponse.success && marathonResponse.data) {
+        setMarathon(marathonResponse.data.marathon);
+      }
+
+      if (progressResponse.success && progressResponse.data) {
+        setMarathonProgress(progressResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching marathon data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleViewLeaderboard = () => {
     router.push('/screens/leaderboard');
@@ -42,17 +116,111 @@ export default function MarathonDetailScreen() {
     }
   };
   
-  const milestones = [
-    { id: 1, distance: 0, name: 'Start', row: 0, col: 0, icon: Flag },
-    { id: 2, distance: 1.2, name: 'First Step', row: 0, col: 1, icon: MapPin },
-    { id: 3, distance: 2.5, name: 'Checkpoint 1', row: 0, col: 2, icon: Star },
-    { id: 4, distance: 3.7, name: 'Midpoint 1', row: 1, col: 2, icon: MapPin },
-    { id: 5, distance: 5, name: 'Halfway', row: 1, col: 1, icon: Star },
-    { id: 6, distance: 6.3, name: 'Midpoint 2', row: 1, col: 0, icon: MapPin },
-    { id: 7, distance: 7.5, name: 'Checkpoint 2', row: 2, col: 0, icon: Star },
-    { id: 8, distance: 8.8, name: 'Final Push', row: 2, col: 1, icon: MapPin },
-    { id: 9, distance: 10, name: 'Finish!', row: 2, col: 2, icon: Trophy },
-  ];
+  const getMilestones = () => {
+    if (!marathon?.spots) return [];
+    
+    const sortedSpots = [...marathon.spots].sort((a, b) => a.milestoneOrder - b.milestoneOrder);
+    const totalMilestones = sortedSpots.length + 2;
+    
+    const milestones = [];
+    
+    milestones.push({
+      id: 0,
+      distance: 0,
+      name: 'Start',
+      description: 'Begin your eco journey!',
+      row: 0,
+      col: 0,
+      icon: Flag,
+      uuid: 'start',
+      requiredQuestPoints: 0,
+      marathonPointsBonus: 0,
+      experienceBonus: 0
+    });
+    
+    sortedSpots.forEach((spot, index) => {
+      const progress = (index + 1) / (totalMilestones - 1);
+      const distance = progress * totalDistance;
+      const milestoneIndex = index + 1;
+      
+      let row, col;
+      if (milestoneIndex < 3) {
+        row = 0;
+        col = milestoneIndex;
+      } else if (milestoneIndex < 6) {
+        row = 1;
+        col = 2 - (milestoneIndex - 3);
+      } else {
+        row = 2;
+        col = milestoneIndex - 6;
+      }
+      
+      const icon = milestoneIndex % 2 === 0 ? Star : MapPin;
+      
+      milestones.push({
+        id: spot.milestoneOrder,
+        distance,
+        name: spot.name,
+        description: spot.description,
+        row,
+        col,
+        icon,
+        uuid: spot.uuid,
+        requiredQuestPoints: spot.requiredQuestPoints,
+        marathonPointsBonus: spot.marathonPointsBonus,
+        experienceBonus: spot.experienceBonus
+      });
+    });
+    
+    const finishIndex = totalMilestones - 1;
+    let finishRow, finishCol;
+    if (finishIndex < 3) {
+      finishRow = 0;
+      finishCol = finishIndex;
+    } else if (finishIndex < 6) {
+      finishRow = 1;
+      finishCol = 2 - (finishIndex - 3);
+    } else {
+      finishRow = 2;
+      finishCol = finishIndex - 6;
+    }
+    
+    milestones.push({
+      id: 999,
+      distance: totalDistance,
+      name: 'Finish!',
+      description: 'Congratulations on completing the marathon!',
+      row: finishRow,
+      col: finishCol,
+      icon: Trophy,
+      uuid: 'finish',
+      requiredQuestPoints: 0,
+      marathonPointsBonus: marathon.finalMarathonPoints,
+      experienceBonus: marathon.finalExperience
+    });
+    
+    return milestones;
+  };
+
+  const milestones = getMilestones();
+
+  const getCurrentProgress = () => {
+    if (!marathonProgress || milestones.length === 0) return 0;
+    
+    return (marathonProgress.progress / 100) * totalDistance;
+  };
+
+  const getEarnedMarathonPoints = () => {
+    if (!marathonProgress || !marathon?.spots) return 0;
+    
+    const completedSpots = marathon.spots.filter((_, index) => 
+      index < marathonProgress.reachedMilestones
+    );
+    
+    return completedSpots.reduce((total, spot) => total + spot.marathonPointsBonus, 0);
+  };
+
+  const currentProgress = getCurrentProgress();
   
   const getPosition = (row: number, col: number) => {
     const containerWidth = width - 80;
@@ -97,11 +265,61 @@ export default function MarathonDetailScreen() {
   
   const isCompleted = (distance: number) => distance <= currentProgress;
   
+  const isMilestoneCompleted = (milestoneOrder: number) => {
+    if (!marathonProgress) return false;
+    return milestoneOrder <= marathonProgress.reachedMilestones;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: 'Marathon',
+            headerStyle: styles.header,
+            headerTitleStyle: styles.headerTitle,
+            headerTintColor: colors.text,
+          }} 
+        />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading marathon...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!marathon) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: 'Marathon',
+            headerStyle: styles.header,
+            headerTitleStyle: styles.headerTitle,
+            headerTintColor: colors.text,
+          }} 
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Marathon not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
         options={{
-          title: 'Marathon',
+          title: marathon.title,
           headerStyle: styles.header,
           headerTitleStyle: styles.headerTitle,
           headerTintColor: colors.text,
@@ -111,19 +329,24 @@ export default function MarathonDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         <View style={styles.marathonInfoCard}>
           <Image 
-            source={require('@/assets/images/ad.png')} 
+            source={
+              marathon.eventImage 
+                ? { uri: marathon.eventImage }
+                : require('@/assets/images/ad.png')
+            }
             style={styles.marathonBanner}
             resizeMode="cover"
           />
-          <Text style={styles.marathonTitle}>Eco Marathon Challenge</Text>
+          <Text style={styles.marathonTitle}>{marathon.title}</Text>
+          <Text style={styles.marathonDescription}>{marathon.description}</Text>
           <View style={styles.dateContainer}>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>Start Date</Text>
-              <Text style={styles.dateValue}>Jan 1, 2025</Text>
+              <Text style={styles.dateValue}>{formatDate(marathon.startDate)}</Text>
             </View>
             <View style={styles.dateItem}>
               <Text style={styles.dateLabel}>End Date</Text>
-              <Text style={styles.dateValue}>Jan 31, 2025</Text>
+              <Text style={styles.dateValue}>{formatDate(marathon.endDate)}</Text>
             </View>
           </View>
         </View>
@@ -131,14 +354,43 @@ export default function MarathonDetailScreen() {
         <View style={styles.marathonCard}>
           <View style={styles.marathonContainer}>
             <Svg width={width - 80} height={520} style={styles.svgContainer}>
-              <Path
-                d={createPath()}
-                stroke="#9CA3AF"
-                strokeWidth="5"
-                fill="none"
-                strokeLinecap="round"
-                strokeDasharray="10,8"
-              />
+              {milestones.map((milestone, index) => {
+                if (index === 0) return null;
+                
+                const prevMilestone = milestones[index - 1];
+                const prevPos = getPosition(prevMilestone.row, prevMilestone.col);
+                const currPos = getPosition(milestone.row, milestone.col);
+                
+                const isCompleted = currentProgress >= milestone.distance;
+                const strokeColor = isCompleted ? colors.success : "#9CA3AF";
+                
+                let segmentPath;
+                if (index === 3 || index === 6) {
+                  const isRightToLeft = index === 6;
+                  const curveOffset = isRightToLeft ? -100 : 100;
+                  
+                  const cp1x = prevPos.x + curveOffset;
+                  const cp1y = prevPos.y + 40;
+                  const cp2x = currPos.x - curveOffset;
+                  const cp2y = currPos.y - 40;
+                  
+                  segmentPath = `M ${prevPos.x} ${prevPos.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${currPos.x} ${currPos.y}`;
+                } else {
+                  segmentPath = `M ${prevPos.x} ${prevPos.y} L ${currPos.x} ${currPos.y}`;
+                }
+                
+                return (
+                  <Path
+                    key={`segment-${index}`}
+                    d={segmentPath}
+                    stroke={strokeColor}
+                    strokeWidth="5"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray="10,8"
+                  />
+                );
+              })}
             </Svg>
             
             {milestones.map((milestone) => {
@@ -146,6 +398,9 @@ export default function MarathonDetailScreen() {
               const isCurrent = Math.abs(milestone.distance - currentProgress) < 0.5;
               const position = getPosition(milestone.row, milestone.col);
               const Icon = milestone.icon;
+              
+              const isActualMilestone = milestone.uuid !== 'start' && milestone.uuid !== 'finish';
+              const milestoneCompleted = isActualMilestone ? isMilestoneCompleted(milestone.id) : completed;
               
               return (
                 <View
@@ -157,17 +412,24 @@ export default function MarathonDetailScreen() {
                 >
                   <View style={[
                     styles.milestoneCircle,
-                    completed && styles.completedMilestone,
+                    milestoneCompleted && styles.completedMilestone,
                     isCurrent && styles.currentMilestone
                   ]}>
                     <Icon 
                       size={16} 
-                      color={completed || isCurrent ? 'white' : colors.textSecondary} 
+                      color={milestoneCompleted || isCurrent ? 'white' : colors.textSecondary} 
                     />
                   </View>
-                  <Text style={[styles.milestoneText, (completed || isCurrent) && styles.completedText]}>
+                  <Text style={[styles.milestoneText, (milestoneCompleted || isCurrent) && styles.completedText]}>
                     {milestone.name}
                   </Text>
+                  {milestoneCompleted && isActualMilestone && (
+                    <View style={styles.rewardBadge}>
+                      <Text style={styles.rewardBadgeText}>
+                        +{milestone.marathonPointsBonus}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               );
             })}
@@ -227,26 +489,34 @@ export default function MarathonDetailScreen() {
         <View style={styles.progressCard}>
           <View style={styles.progressStats}>
             <View style={styles.progressStat}>
-              <Text style={styles.progressValue}>{currentProgress}km</Text>
-              <Text style={styles.progressLabel}>Distance</Text>
+              <Text style={styles.progressValue}>
+                {marathonProgress ? marathonProgress.currentQuestPoints : 0}
+              </Text>
+              <Text style={styles.progressLabel}>Quest Points</Text>
             </View>
             <View style={styles.progressDivider} />
             <View style={styles.progressStat}>
-              <Text style={styles.progressValue}>{totalDistance}km</Text>
-              <Text style={styles.progressLabel}>Total</Text>
+              <Text style={styles.progressValue}>
+                {marathonProgress ? marathonProgress.reachedMilestones : 0}
+              </Text>
+              <Text style={styles.progressLabel}>Milestones</Text>
             </View>
             <View style={styles.progressDivider} />
             <View style={styles.progressStat}>
-              <Text style={styles.progressValue}>{((currentProgress / totalDistance) * 100).toFixed(0)}%</Text>
-              <Text style={styles.progressLabel}>Complete</Text>
+              <Text style={styles.progressValue}>
+                {marathon ? marathon.finalMarathonPoints : 0}
+              </Text>
+              <Text style={styles.progressLabel}>Goal</Text>
             </View>
           </View>
           
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${(currentProgress / totalDistance) * 100}%` }]} />
+              <View style={[styles.progressFill, { width: `${marathonProgress ? marathonProgress.progress : 0}%` }]} />
             </View>
-            <Text style={styles.progressText}>{((currentProgress / totalDistance) * 100).toFixed(0)}% Complete</Text>
+            <Text style={styles.progressText}>
+              {marathonProgress ? marathonProgress.progress.toFixed(1) : 0}% Complete
+            </Text>
           </View>
         </View>
         
@@ -264,12 +534,21 @@ export default function MarathonDetailScreen() {
                 <Trophy size={24} color={colors.primary} />
               </View>
               <View style={styles.rewardInfo}>
-                <Text style={styles.rewardName}>Eco Runner</Text>
-                <Text style={styles.rewardDescription}>Unlock at 5km</Text>
-                <View style={styles.rewardPointsContainer}>
-                  <Coins size={16} color={colors.warning} />
-                  <Text style={styles.rewardPoints}>500</Text>
-                </View>
+                <Text style={styles.rewardName}>
+                  {marathonProgress?.nextMilestoneName || 'No more milestones'}
+                </Text>
+                <Text style={styles.rewardDescription}>
+                  {marathonProgress?.remainingQuestPoints 
+                    ? `${marathonProgress.remainingQuestPoints} more quest points needed`
+                    : 'All milestones completed!'
+                  }
+                </Text>
+                {marathonProgress?.nextMilestoneReward && (
+                  <View style={styles.rewardPointsContainer}>
+                    <Coins size={16} color={colors.warning} />
+                    <Text style={styles.rewardPoints}>{marathonProgress.nextMilestoneReward}</Text>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -582,5 +861,22 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.primary,
     fontWeight: '700',
+  },
+  rewardBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: colors.success,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  rewardBadgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
