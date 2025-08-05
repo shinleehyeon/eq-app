@@ -19,10 +19,10 @@ import { useUserStore } from '@/store/user-store';
 
 const { width } = Dimensions.get('window');
 
-export default function MarathonScreen() {
+export default function MarathonDetailScreen() {
   const { selectedPet } = useUserStore();
   const [currentProgress, setCurrentProgress] = useState(4.2); 
-  const totalDistance = 10; 
+  const totalDistance = 10;
   
   const handleViewLeaderboard = () => {
     router.push('/screens/leaderboard');
@@ -299,6 +299,24 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    ...typography.heading4,
+    color: colors.text,
+  },
   marathonCard: {
     backgroundColor: colors.card,
     marginHorizontal: 20,
@@ -525,16 +543,23 @@ const styles = StyleSheet.create({
   },
   marathonBanner: {
     width: '100%',
-    height: 80,
+    height: 120,
   },
   marathonTitle: {
     ...typography.heading2,
     color: colors.text,
     textAlign: 'center',
     marginTop: 20,
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 20,
     fontWeight: '700',
+  },
+  marathonDescription: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
   dateContainer: {
     flexDirection: 'row',
