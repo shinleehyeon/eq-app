@@ -146,6 +146,33 @@ interface ProfileResponse {
   };
 }
 
+export interface ShopItem {
+  name: string;
+  displayName: string;
+  cost: number;
+  description: string;
+  type: 'food' | 'toy';
+}
+
+interface GetShopItemsResponse {
+  message: string;
+  items: ShopItem[];
+}
+
+export interface MyItem {
+  name: string;
+  displayName: string;
+  type: 'food' | 'toy';
+  cost: number;
+  description: string;
+  quantity: number;
+}
+
+interface GetMyItemsResponse {
+  message: string;
+  items: MyItem[];
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -274,5 +301,13 @@ export const apiClient = {
 
   async getProfile(token?: string): Promise<ApiResponse<ProfileResponse>> {
     return this.get<ProfileResponse>('/auth/profile', token);
+  },
+
+  async getShopItems(token?: string): Promise<ApiResponse<GetShopItemsResponse>> {
+    return this.get<GetShopItemsResponse>('/pets/shop/items', token);
+  },
+
+  async getMyItems(token?: string): Promise<ApiResponse<GetMyItemsResponse>> {
+    return this.get<GetMyItemsResponse>('/pets/items/my', token);
   },
 };

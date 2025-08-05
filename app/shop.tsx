@@ -7,14 +7,13 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Modal,
-  Dimensions,
-  Image
+  Dimensions
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import LottieView from 'lottie-react-native';
-import { X, Star, Coins, ArrowLeft, Check, Apple, Gamepad2 } from 'lucide-react-native';
+import { X, Star, Coins, ArrowLeft, Check, Apple, Gamepad2, Lock } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { useUserStore } from '@/store/user-store';
 import { apiClient } from '@/lib/api/client';
@@ -64,7 +63,7 @@ const pets: Pet[] = [
   },
   {
     id: 'turtle',
-    name: 'Sea Turtle',
+    name: 'Sea Turtle', 
     price: 250,
     description: 'A wise turtle that protects ocean life and reduces plastic waste.',
     animationSource: require('@/assets/animation/turtle.json'),
@@ -89,94 +88,19 @@ const rarityColors = {
   legendary: '#FF9800',
 };
 
-const foodItems: ShopItem[] = [
-  {
-    id: 'seaweed',
-    name: 'Fresh Seaweed',
-    price: 50,
-    description: 'Nutritious seaweed that boosts your pet\'s happiness',
-    icon: '🌿',
-    category: 'food',
-    owned: false,
-  },
-  {
-    id: 'organic_seeds',
-    name: 'Organic Seeds',
-    price: 30,
-    description: 'Premium organic seeds for flying pets',
-    icon: '🌰',
-    category: 'food',
-    owned: false,
-  },
-  {
-    id: 'eco_berries',
-    name: 'Eco Berries',
-    price: 75,
-    description: 'Delicious berries that increase pet energy',
-    icon: '🫐',
-    category: 'food',
-    owned: false,
-  },
-  {
-    id: 'bamboo_snack',
-    name: 'Bamboo Snack',
-    price: 40,
-    description: 'Crunchy bamboo treats for gentle giants',
-    icon: '🎋',
-    category: 'food',
-    owned: false,
-  },
-];
-
-const toyItems: ShopItem[] = [
-  {
-    id: 'eco_ball',
-    name: 'Eco Ball',
-    price: 100,
-    description: 'A fun ball made from recycled materials',
-    icon: '⚽',
-    category: 'toy',
-    owned: false,
-  },
-  {
-    id: 'puzzle_tree',
-    name: 'Puzzle Tree',
-    price: 150,
-    description: 'Interactive puzzle that teaches about nature',
-    icon: '🌳',
-    category: 'toy',
-    owned: false,
-  },
-  {
-    id: 'water_wheel',
-    name: 'Water Wheel',
-    price: 120,
-    description: 'Spinning wheel toy for aquatic pets',
-    icon: '🎡',
-    category: 'toy',
-    owned: false,
-  },
-  {
-    id: 'flying_ring',
-    name: 'Flying Ring',
-    price: 80,
-    description: 'Colorful ring toy for flying pets',
-    icon: '🪁',
-    category: 'toy',
-    owned: false,
-  },
-];
 
 export default function ShopScreen() {
   const router = useRouter();
-  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, user, accessToken } = useUserStore();
+  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, accessToken } = useUserStore();
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('pets');
-  const [userCoins, setUserCoins] = useState(user?.coins || 0);
+  const [userCoins, setUserCoins] = useState(0);
   const [ownedPets, setOwnedPets] = useState<string[]>(['duck', 'bird']);
   const [ownedItems, setOwnedItems] = useState<string[]>([]);
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [shopFoodItems, setShopFoodItems] = useState<ShopItem[]>([]);
+  const [shopToyItems, setShopToyItems] = useState<ShopItem[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -189,6 +113,56 @@ export default function ShopScreen() {
       }
     };
     fetchProfile();
+  }, [accessToken]);
+
+  useEffect(() => {
+    const fetchShopItems = async () => {
+      if (accessToken) {
+        const [shopResult, myItemsResult] = await Promise.all([
+          apiClient.getShopItems(accessToken),
+          apiClient.getMyItems(accessToken)
+        ]);
+
+        if (shopResult.success && shopResult.data && myItemsResult.success && myItemsResult.data) {
+          const myItemsSet = new Set(
+            myItemsResult.data.items.map(item => item.name)
+          );
+
+          const foodItems = shopResult.data.items
+            .filter(item => item.type === 'food')
+            .map((item, index) => ({
+              id: item.name,
+              name: item.displayName,
+              price: item.cost,
+              description: item.description,
+              icon: ['🌿', '🫐', '🌰', '🎋'][index] || '🌿',
+              category: 'food' as const,
+              owned: myItemsSet.has(item.name)
+            }));
+          
+          const toyItems = shopResult.data.items
+            .filter(item => item.type === 'toy')
+            .map((item, index) => ({
+              id: item.name,
+              name: item.displayName,
+              price: item.cost,
+              description: item.description,
+              icon: ['⚽', '🌳', '🎡', '🪁'][index] || '⚽',
+              category: 'toy' as const,
+              owned: myItemsSet.has(item.name)
+            }));
+          
+          setShopFoodItems(foodItems);
+          setShopToyItems(toyItems);
+          
+          const ownedItemIds = [...foodItems, ...toyItems]
+            .filter(item => item.owned)
+            .map(item => item.id);
+          setOwnedItems(ownedItemIds);
+        }
+      }
+    };
+    fetchShopItems();
   }, [accessToken]);
 
   const handlePurchasePet = (pet: Pet) => {
@@ -230,8 +204,8 @@ export default function ShopScreen() {
         {!isOwned && (
           <View style={styles.lockOverlay}>
             <View style={styles.lockBadge}>
-              <Coins size={14} color={colors.white} />
-              <Text style={styles.lockText}>Locked</Text>
+              <Lock size={14} color={colors.white} />
+              <Text style={styles.lockText}>LOCKED</Text>
             </View>
           </View>
         )}
@@ -290,8 +264,8 @@ export default function ShopScreen() {
         {!isOwned && (
           <View style={styles.lockOverlay}>
             <View style={styles.lockBadge}>
-              <Coins size={14} color={colors.white} />
-              <Text style={styles.lockText}>{item.price}</Text>
+              <Lock size={14} color={colors.white} />
+              <Text style={styles.lockText}>LOCKED</Text>
             </View>
           </View>
         )}
@@ -385,7 +359,7 @@ export default function ShopScreen() {
           <>
             <Text style={styles.sectionTitle}>Pet Food</Text>
             <View style={styles.itemsGrid}>
-              {foodItems.map((item) => (
+              {shopFoodItems.map((item) => (
                 <ItemCard key={item.id} item={item} />
               ))}
             </View>
@@ -396,7 +370,7 @@ export default function ShopScreen() {
           <>
             <Text style={styles.sectionTitle}>Pet Toys</Text>
             <View style={styles.itemsGrid}>
-              {toyItems.map((item) => (
+              {shopToyItems.map((item) => (
                 <ItemCard key={item.id} item={item} />
               ))}
             </View>
