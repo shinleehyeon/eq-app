@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   milestoneText: {
     ...typography.caption,
     color: colors.textSecondary,
-    marginTop: 8,
+    marginTop: 20,
     textAlign: 'center',
     fontWeight: '600',
   },

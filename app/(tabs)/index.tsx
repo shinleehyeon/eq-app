@@ -504,7 +504,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/shop')}
               >
                 <ShoppingBag size={18} color={colors.white} />
-                <Text style={styles.buttonText}>Pet Shop</Text>
+                <Text style={styles.buttonText}>My Pets</Text>
               </TouchableOpacity>
             </View>
           </View>

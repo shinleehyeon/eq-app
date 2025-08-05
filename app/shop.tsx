@@ -461,7 +461,7 @@ export default function ShopScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
         options={{
-          title: 'Pet Shop',
+          title: 'My Pets',
           headerTitleStyle: styles.headerTitle,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
