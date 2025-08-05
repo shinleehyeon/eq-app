@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -9,10 +9,12 @@ import {
   ActivityIndicator,
   Dimensions,
   Animated,
-  Modal
+  Modal,
+  Easing
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
@@ -144,9 +146,11 @@ export default function HomeScreen() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
   const [showPetModal, setShowPetModal] = useState(false);
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [displayCoins, setDisplayCoins] = useState(0);
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef(null);
+  const animatedCoinValue = useRef(new Animated.Value(0)).current;
   
   const getAnimationSource = () => {
     switch(selectedPet) {
@@ -230,6 +234,9 @@ export default function HomeScreen() {
           const result = await apiClient.getProfile(accessToken);
           if (result.success && result.data) {
             setProfileData(result.data.user);
+            const coins = result.data.user.marathonPoints || 0;
+            setDisplayCoins(coins);
+            animatedCoinValue.setValue(coins);
           }
         }
         
@@ -242,6 +249,45 @@ export default function HomeScreen() {
 
     ensureUserInitialization();
   }, [accessToken]);
+
+  // Animate coins when screen comes into focus
+  const animateCoins = useCallback(() => {
+    // Prioritize user store coins over profile data for real-time updates
+    const targetCoins = user?.coins !== undefined ? user.coins : (profileData?.marathonPoints || 0);
+    
+    const listener = animatedCoinValue.addListener(({ value }) => {
+      setDisplayCoins(Math.floor(value));
+    });
+
+    // Always start animation from 0 to create the counting effect
+    animatedCoinValue.setValue(0);
+    
+    Animated.timing(animatedCoinValue, {
+      toValue: targetCoins,
+      duration: 1200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    return () => {
+      animatedCoinValue.removeListener(listener);
+    };
+  }, [user?.coins, profileData?.marathonPoints, animatedCoinValue]);
+
+  // Trigger animation when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const cleanup = animateCoins();
+      return cleanup;
+    }, [animateCoins])
+  );
+
+  // Also animate on initial data load and when user coins change
+  useEffect(() => {
+    if (profileData || user) {
+      animateCoins();
+    }
+  }, [user?.coins, animateCoins]);
 
   useEffect(() => {
     return () => {
@@ -307,7 +353,7 @@ export default function HomeScreen() {
             
             <View style={styles.coinsContainer}>
               <Coins size={28} color={colors.warning} />
-              <Text style={styles.coinsText}>{profileData?.marathonPoints || 0}</Text>
+              <Text style={styles.coinsText}>{displayCoins}</Text>
             </View>
           </View>
         </View>

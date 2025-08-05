@@ -28,6 +28,7 @@ interface UserState {
   setUser: (userData: Partial<User>, accessToken?: string) => void;
   addPlant: (plant: Plant) => void;
   setSelectedPet: (petId: string) => void;
+  updateCoins: (coins: number) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -344,6 +345,18 @@ export const useUserStore = create<UserState>()(
 
       setSelectedPet: (petId: string) => {
         set({ selectedPet: petId });
+      },
+      
+      updateCoins: (coins: number) => {
+        const { user } = get();
+        if (!user) return;
+        
+        set({ 
+          user: { 
+            ...user, 
+            coins 
+          } 
+        });
       }
     }),
     {

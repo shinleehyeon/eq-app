@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Modal,
-  Dimensions
+  Dimensions,
+  Animated,
+  Easing,
+  Alert
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import colors from '@/constants/colors';
@@ -92,30 +95,51 @@ const rarityColors = {
 
 export default function ShopScreen() {
   const router = useRouter();
-  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, accessToken } = useUserStore();
+  const { selectedPet: currentPetId, setSelectedPet: setCurrentPet, accessToken, updateCoins } = useUserStore();
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('pets');
   const [userCoins, setUserCoins] = useState(0);
   const [ownedPets, setOwnedPets] = useState<string[]>(['duck', 'bird']);
   const [ownedItems, setOwnedItems] = useState<string[]>([]);
-  const [profileData, setProfileData] = useState<any>(null);
   const [shopFoodItems, setShopFoodItems] = useState<ShopItem[]>([]);
   const [shopToyItems, setShopToyItems] = useState<ShopItem[]>([]);
   const [purchaseQuantity, setPurchaseQuantity] = useState(1);
+  const animatedCoinValue = useRef(new Animated.Value(userCoins)).current;
+  const [displayCoins, setDisplayCoins] = useState(userCoins);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (accessToken) {
         const result = await apiClient.getProfile(accessToken);
         if (result.success && result.data) {
-          setProfileData(result.data.user);
-          setUserCoins(result.data.user.marathonPoints || 0);
+          const coins = result.data.user.marathonPoints || 0;
+          setUserCoins(coins);
+          setDisplayCoins(coins);
+          animatedCoinValue.setValue(coins);
+          updateCoins(coins);
         }
       }
     };
     fetchProfile();
   }, [accessToken]);
+
+  useEffect(() => {
+    const listener = animatedCoinValue.addListener(({ value }) => {
+      setDisplayCoins(Math.floor(value));
+    });
+
+    Animated.timing(animatedCoinValue, {
+      toValue: userCoins,
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    return () => {
+      animatedCoinValue.removeListener(listener);
+    };
+  }, [userCoins]);
 
   useEffect(() => {
     const fetchShopItems = async () => {
@@ -185,9 +209,20 @@ export default function ShopScreen() {
   const handlePurchaseItem = async (item: ShopItem) => {
     const totalPrice = item.price * purchaseQuantity;
     if (userCoins >= totalPrice && accessToken) {
+      const newCoinValue = userCoins - totalPrice;
+      setUserCoins(newCoinValue);
+      
       const result = await apiClient.purchaseItem(item.id, purchaseQuantity, accessToken);
       if (result.success && result.data) {
-        setUserCoins(prev => prev - result.data.usedMarathonPoints);
+        updateCoins(newCoinValue);
+        
+        Alert.alert(
+          'Purchase Successful!',
+          `You have purchased ${purchaseQuantity} ${item.name}.\nCoins used: ${result.data.usedMarathonPoints}`,
+          [
+            { text: 'OK', style: 'default' }
+          ]
+        );
         
         const myItemsResult = await apiClient.getMyItems(accessToken);
         if (myItemsResult.success && myItemsResult.data) {
@@ -204,8 +239,17 @@ export default function ShopScreen() {
             quantity: myItemsQuantityMap.get(toyItem.id) || toyItem.quantity || 0
           })));
         }
+      } else {
+        setUserCoins(userCoins);
+        updateCoins(userCoins);
         
-        console.log('Purchased item:', item.name, 'Quantity:', purchaseQuantity);
+        Alert.alert(
+          'Purchase Failed',
+          'An error occurred while purchasing. Please try again.',
+          [
+            { text: 'OK', style: 'default' }
+          ]
+        );
       }
     }
     setSelectedItem(null);
@@ -335,7 +379,7 @@ export default function ShopScreen() {
       <View style={styles.header}>
         <View style={styles.coinsContainer}>
           <Coins size={24} color={colors.warning} />
-          <Text style={styles.coinsText}>{profileData?.marathonPoints || userCoins}</Text>
+          <Text style={styles.coinsText}>{displayCoins}</Text>
         </View>
       </View>
 
@@ -518,7 +562,7 @@ export default function ShopScreen() {
                 </View>
 
                 <Button
-                  title={userCoins >= selectedItem.price * purchaseQuantity ? '구매하기' : '코인이 부족합니다'}
+                  title={userCoins >= selectedItem.price * purchaseQuantity ? 'Purchase' : 'Not enough coins'}
                   onPress={() => handlePurchaseItem(selectedItem)}
                   disabled={userCoins < selectedItem.price * purchaseQuantity}
                   style={styles.purchaseButton}
