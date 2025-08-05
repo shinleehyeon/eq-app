@@ -148,6 +148,12 @@ export default function HomeScreen() {
   const [showPetModal, setShowPetModal] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
   const [mainPetData, setMainPetData] = useState<any>(null);
+  const [homeData, setHomeData] = useState<{
+    activeDailyQuests: number;
+    completedDailyQuests: number;
+    totalPetItems: number;
+    activeMarathonName: string | null;
+  } | null>(null);
   const [displayCoins, setDisplayCoins] = useState(0);
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef<number | null>(null);
@@ -232,9 +238,10 @@ export default function HomeScreen() {
     const ensureUserInitialization = async () => {
       try {
         if (accessToken) {
-          const [profileResult, mainPetResult] = await Promise.all([
+          const [profileResult, mainPetResult, homeResult] = await Promise.all([
             apiClient.getProfile(accessToken),
-            apiClient.getMainPet(accessToken)
+            apiClient.getMainPet(accessToken),
+            apiClient.getHomeData(accessToken)
           ]);
           
           if (profileResult.success && profileResult.data) {
@@ -248,6 +255,10 @@ export default function HomeScreen() {
           if (mainPetResult.success && mainPetResult.data) {
             setMainPetData(mainPetResult.data.mainPet);
             setSelectedPet(mainPetResult.data.mainPet.type);
+          }
+          
+          if (homeResult.success && homeResult.data) {
+            setHomeData(homeResult.data);
           }
         }
         
@@ -297,6 +308,10 @@ export default function HomeScreen() {
           if (mainPetResult.success && mainPetResult.data) {
             setMainPetData(mainPetResult.data.mainPet);
             setSelectedPet(mainPetResult.data.mainPet.type);
+          }
+          
+          if (homeResult.success && homeResult.data) {
+            setHomeData(homeResult.data);
           }
         }
       };
@@ -384,19 +399,19 @@ export default function HomeScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Target size={20} color={colors.primary} />
-              <Text style={styles.statValue}>2</Text>
+              <Text style={styles.statValue}>{homeData?.activeDailyQuests || 0}</Text>
               <Text style={styles.statLabel}>Active Quests</Text>
             </View>
             
             <View style={styles.statItem}>
               <CheckCircle size={20} color={colors.success} />
-              <Text style={styles.statValue}>{completedQuests.length}</Text>
+              <Text style={styles.statValue}>{homeData?.completedDailyQuests || 0}</Text>
               <Text style={styles.statLabel}>Completed</Text>
             </View>
             
             <View style={styles.statItem}>
               <PawPrint size={20} color={colors.success} />
-              <Text style={styles.statValue}>{(profileData?.petToys || 0) + (profileData?.petFood || 0)}</Text>
+              <Text style={styles.statValue}>{homeData?.totalPetItems || 0}</Text>
               <Text style={styles.statLabel}>Pet Items</Text>
             </View>
           </View>
@@ -406,11 +421,21 @@ export default function HomeScreen() {
           <View style={styles.marathonStatusInfo}>
             <View style={styles.marathonStatusHeader}>
               <Route size={16} color={colors.primary} />
-              <Text style={styles.marathonStatusTitle}>Eco Marathon Challenge</Text>
+              <Text style={styles.marathonStatusTitle}>
+                {homeData?.activeMarathonName || 'No Active Marathon'}
+              </Text>
             </View>
             <View style={styles.marathonStatusFooter}>
-              <View style={styles.marathonStatusDot} />
-              <Text style={styles.marathonStatusText}>Participating</Text>
+              <View style={[
+                styles.marathonStatusDot,
+                !homeData?.activeMarathonName && { backgroundColor: colors.error }
+              ]} />
+              <Text style={[
+                styles.marathonStatusText,
+                !homeData?.activeMarathonName && { color: colors.error }
+              ]}>
+                {homeData?.activeMarathonName ? 'Participating' : 'Not Participating'}
+              </Text>
             </View>
           </View>
         </View>
