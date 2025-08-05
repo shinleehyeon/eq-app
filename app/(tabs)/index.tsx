@@ -466,7 +466,13 @@ export default function HomeScreen() {
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
                 style={[styles.actionButton, styles.detailButton]}
-                onPress={() => router.push('/pet-detail')}
+                onPress={() => {
+                  if (mainPetData?.uuid) {
+                    router.push(`/pet-detail?uuid=${mainPetData.uuid}`);
+                  } else {
+                    router.push('/pet-detail');
+                  }
+                }}
               >
                 <Info size={18} color={colors.white} />
                 <Text style={styles.buttonText}>Pet Details</Text>

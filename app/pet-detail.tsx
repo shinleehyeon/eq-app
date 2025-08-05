@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,28 +8,36 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
-  Animated
+  Animated,
+  ActivityIndicator
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import LottieView from 'lottie-react-native';
 import { ArrowLeft, Heart, Utensils, Trophy, Gamepad2, Apple } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { useUserStore } from '@/store/user-store';
+import { apiClient } from '@/lib/api/client';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 interface PetData {
+  uuid: string;
   name: string;
+  type: string;
   level: number;
   experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
   happiness: number;
   hunger: number;
-  abilities: string[];
-  personality: string;
-  favoriteFood: string;
-  birthdate: string;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+  isMainPet?: boolean;
 }
 
 interface OwnedItem {
@@ -41,9 +49,12 @@ interface OwnedItem {
 
 export default function PetDetailScreen() {
   const router = useRouter();
-  const { selectedPet, user } = useUserStore();
+  const params = useLocalSearchParams();
+  const petUuid = params.uuid as string;
+  const { selectedPet, user, accessToken } = useUserStore();
+  const [petData, setPetData] = useState<PetData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [expandedCard, setExpandedCard] = useState<'feed' | 'play' | null>(null);
-  const [petStats, setPetStats] = useState({ happiness: 85, hunger: 30 });
   const [showLoveAnimation, setShowLoveAnimation] = useState(false);
   const feedAnimation = useRef(new Animated.Value(0)).current;
   const playAnimation = useRef(new Animated.Value(0)).current;
@@ -58,8 +69,44 @@ export default function PetDetailScreen() {
     { id: 'water_wheel', name: 'Water Wheel', icon: '🎡', count: 1 },
   ]);
 
+  useEffect(() => {
+    fetchPetData();
+  }, [petUuid]);
+
+  const fetchPetData = async () => {
+    try {
+      setLoading(true);
+      if (!accessToken) {
+        Alert.alert('Error', 'No authentication token found');
+        return;
+      }
+
+      if (!petUuid) {
+        const mainPetResponse = await apiClient.getMainPet(accessToken);
+        if (mainPetResponse.success && mainPetResponse.data) {
+          setPetData(mainPetResponse.data.mainPet);
+        } else {
+          Alert.alert('Error', 'Failed to fetch main pet');
+        }
+      } else {
+        const response = await apiClient.getPetDetail(petUuid, accessToken);
+        if (response.success && response.data) {
+          setPetData(response.data.pet);
+        } else {
+          Alert.alert('Error', response.error || 'Failed to fetch pet data');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching pet data:', error);
+      Alert.alert('Error', 'Failed to load pet data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getAnimationSource = () => {
-    switch(selectedPet) {
+    const type = petData?.type || selectedPet;
+    switch(type) {
       case 'turtle':
         return require('@/assets/animation/turtle.json');
       case 'bird':
@@ -72,61 +119,47 @@ export default function PetDetailScreen() {
     }
   };
 
-  const getPetData = (): PetData => {
-    switch(selectedPet) {
+  const getPetPersonality = (type: string) => {
+    switch(type) {
       case 'turtle':
-        return {
-          name: 'Sea Turtle',
-          level: 5,
-          experience: 60,
-          happiness: petStats.happiness,
-          hunger: petStats.hunger,
-          abilities: ['Ocean Protection', 'Plastic Cleanup'],
-          personality: 'Wise and calm',
-          favoriteFood: 'Seaweed',
-          birthdate: '2024-01-10',
-        };
+        return 'Wise and calm';
       case 'bird':
-        return {
-          name: 'Sky Guardian',
-          level: 4,
-          experience: 45,
-          happiness: petStats.happiness,
-          hunger: petStats.hunger,
-          abilities: ['Air Quality Monitor', 'Eco-awareness'],
-          personality: 'Graceful and alert',
-          favoriteFood: 'Seeds',
-          birthdate: '2024-02-01',
-        };
+        return 'Graceful and alert';
       case 'giraffe':
-        return {
-          name: 'Forest Giant',
-          level: 7,
-          experience: 80,
-          happiness: petStats.happiness,
-          hunger: petStats.hunger,
-          abilities: ['Tree Protection', 'Forest Care'],
-          personality: 'Gentle and caring',
-          favoriteFood: 'Leaves',
-          birthdate: '2023-12-20',
-        };
+        return 'Gentle and caring';
       case 'duck':
       default:
-        return {
-          name: 'Ocean Duck',
-          level: 5,
-          experience: 60,
-          happiness: petStats.happiness,
-          hunger: petStats.hunger,
-          abilities: ['Water Conservation', 'Ocean Cleanup'],
-          personality: 'Playful and energetic',
-          favoriteFood: 'Seaweed Snacks',
-          birthdate: '2024-01-15',
-        };
+        return 'Playful and energetic';
     }
   };
 
-  const currentPet = getPetData();
+  const getPetAbilities = (type: string) => {
+    switch(type) {
+      case 'turtle':
+        return ['Ocean Protection', 'Plastic Cleanup'];
+      case 'bird':
+        return ['Air Quality Monitor', 'Eco-awareness'];
+      case 'giraffe':
+        return ['Tree Protection', 'Forest Care'];
+      case 'duck':
+      default:
+        return ['Water Conservation', 'Ocean Cleanup'];
+    }
+  };
+
+  const getPetFavoriteFood = (type: string) => {
+    switch(type) {
+      case 'turtle':
+        return 'Seaweed';
+      case 'bird':
+        return 'Seeds';
+      case 'giraffe':
+        return 'Leaves';
+      case 'duck':
+      default:
+        return 'Seaweed Snacks';
+    }
+  };
   const totalFood = foodItems.reduce((sum, item) => sum + item.count, 0);
   const totalToys = toyItems.reduce((sum, item) => sum + item.count, 0);
 
@@ -138,10 +171,12 @@ export default function PetDetailScreen() {
   };
 
   const handleFeedPet = (item: OwnedItem) => {
-    if (petStats.hunger === 0) {
+    if (!petData) return;
+    
+    if (petData.hunger === 0) {
       Alert.alert(
         "Pet is Full!",
-        `${currentPet.name} is not hungry right now. Try playing with them instead!`,
+        `${petData.name} is not hungry right now. Try playing with them instead!`,
         [{ text: "OK" }]
       );
       return;
@@ -155,20 +190,22 @@ export default function PetDetailScreen() {
             : food
         )
       );
-      setPetStats(prev => ({
+      setPetData(prev => prev ? {
         ...prev,
         hunger: Math.max(0, prev.hunger - 15)
-      }));
+      } : null);
       showLoveEffect();
       setExpandedCard(null);
     }
   };
 
   const handlePlayWithPet = (item: OwnedItem) => {
-    if (petStats.happiness === 100) {
+    if (!petData) return;
+    
+    if (petData.happiness === 100) {
       Alert.alert(
         "Pet is Very Happy!",
-        `${currentPet.name} is already at maximum happiness! Maybe try feeding them instead?`,
+        `${petData.name} is already at maximum happiness! Maybe try feeding them instead?`,
         [{ text: "OK" }]
       );
       return;
@@ -182,10 +219,10 @@ export default function PetDetailScreen() {
             : toy
         )
       );
-      setPetStats(prev => ({
+      setPetData(prev => prev ? {
         ...prev,
         happiness: Math.min(100, prev.happiness + 10)
-      }));
+      } : null);
       showLoveEffect();
       setExpandedCard(null);
     }
@@ -227,11 +264,16 @@ export default function PetDetailScreen() {
         }} 
       />
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : petData ? (
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.petContainer}>
           <LottieView
             source={getAnimationSource()}
@@ -251,10 +293,10 @@ export default function PetDetailScreen() {
           )}
         </View>
 
-        <View style={styles.petInfoSection}>
-          <Text style={styles.petName}>{currentPet.name}</Text>
-          <Text style={styles.petPersonality}>{currentPet.personality}</Text>
-        </View>
+          <View style={styles.petInfoSection}>
+            <Text style={styles.petName}>{petData.name}</Text>
+            <Text style={styles.petPersonality}>{getPetPersonality(petData.type)}</Text>
+          </View>
 
         <View style={styles.actionsSection}>
           <View style={styles.actionsRow}>
@@ -347,45 +389,51 @@ export default function PetDetailScreen() {
             <View style={styles.statItem}>
               <Trophy size={20} color={colors.primary} />
               <Text style={styles.statTitle}>Level</Text>
-              <Text style={styles.statValue}>{currentPet.level}</Text>
+              <Text style={styles.statValue}>{petData.level}</Text>
             </View>
             <View style={styles.statItem}>
               <Utensils size={20} color={colors.warning} />
               <Text style={styles.statTitle}>Hunger</Text>
-              <Text style={styles.statValue}>{currentPet.hunger}%</Text>
+              <Text style={styles.statValue}>{petData.hunger}%</Text>
             </View>
             <View style={styles.statItem}>
               <Heart size={20} color={colors.error} />
               <Text style={styles.statTitle}>Happiness</Text>
-              <Text style={styles.statValue}>{currentPet.happiness}%</Text>
+              <Text style={styles.statValue}>{petData.happiness}%</Text>
             </View>
           </View>
           
           <View style={styles.progressSection}>
             <Text style={styles.progressLabel}>Experience</Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${currentPet.experience}%` }]} />
+              <View style={[styles.progressFill, { width: `${Math.max(0, petData.experienceProgress)}%` }]} />
             </View>
-            <Text style={styles.progressText}>{currentPet.experience}% to next level</Text>
+            <Text style={styles.progressText}>{petData.experience}/{petData.experienceToNextLevel} XP to next level</Text>
           </View>
         </View>
 
         <View style={styles.detailsSection}>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Abilities:</Text>
-            <Text style={styles.detailValue}>{currentPet.abilities.join(', ')}</Text>
+            <Text style={styles.detailValue}>{getPetAbilities(petData.type).join(', ')}</Text>
           </View>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Favorite Food:</Text>
-            <Text style={styles.detailValue}>{currentPet.favoriteFood}</Text>
+            <Text style={styles.detailValue}>{getPetFavoriteFood(petData.type)}</Text>
           </View>
           <View style={styles.detailItem}>
             <Text style={styles.detailLabel}>Birthday:</Text>
-            <Text style={styles.detailValue}>{currentPet.birthdate}</Text>
+            <Text style={styles.detailValue}>{new Date(petData.createdAt).toLocaleDateString()}</Text>
           </View>
         </View>
 
-      </ScrollView>
+        </ScrollView>
+      ) : (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Failed to load pet data</Text>
+          <Button title="Retry" onPress={fetchPetData} />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -598,5 +646,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: 16,
   },
 });
