@@ -43,6 +43,7 @@ interface Pet {
   animationSource: any;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   owned: boolean;
+  uuid?: string;
 }
 
 interface ShopItem {
@@ -75,6 +76,7 @@ export default function ShopScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('pets');
   const [userCoins, setUserCoins] = useState(0);
   const [ownedPets, setOwnedPets] = useState<string[]>([]);
+  const [petUuidMap, setPetUuidMap] = useState<Map<string, string>>(new Map());
   const [shopAnimals, setShopAnimals] = useState<Pet[]>([]);
   const [ownedItems, setOwnedItems] = useState<string[]>([]);
   const [shopFoodItems, setShopFoodItems] = useState<ShopItem[]>([]);
@@ -86,13 +88,25 @@ export default function ShopScreen() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (accessToken) {
-        const result = await apiClient.getProfile(accessToken);
-        if (result.success && result.data) {
-          const coins = result.data.user.marathonPoints || 0;
+        const [profileResult, userPetsResult] = await Promise.all([
+          apiClient.getProfile(accessToken),
+          apiClient.getUserPets(accessToken)
+        ]);
+        
+        if (profileResult.success && profileResult.data) {
+          const coins = profileResult.data.user.marathonPoints || 0;
           setUserCoins(coins);
           setDisplayCoins(coins);
           animatedCoinValue.setValue(coins);
           updateCoins(coins);
+        }
+
+        if (userPetsResult.success && userPetsResult.data) {
+          const uuidMap = new Map<string, string>();
+          userPetsResult.data.data.forEach(pet => {
+            uuidMap.set(pet.type, pet.uuid);
+          });
+          setPetUuidMap(uuidMap);
         }
       }
     };
@@ -203,7 +217,9 @@ export default function ShopScreen() {
         setUserCoins(newCoinValue);
         updateCoins(newCoinValue);
         const adoptedPetType = result.data.pet.type;
+        const adoptedPetUuid = result.data.pet.uuid;
         setOwnedPets([...ownedPets, adoptedPetType]);
+        setPetUuidMap(prev => new Map(prev.set(adoptedPetType, adoptedPetUuid)));
         setCurrentPet(adoptedPetType);
         
         Alert.alert(
@@ -213,8 +229,6 @@ export default function ShopScreen() {
             { text: 'OK', style: 'default' }
           ]
         );
-        
-        // Refresh shop animals data to update owned status
         const shopAnimalsResult = await apiClient.getShopAnimals(accessToken);
         if (shopAnimalsResult.success && shopAnimalsResult.data) {
           const animals = shopAnimalsResult.data.animals.map(animal => ({
@@ -297,8 +311,48 @@ export default function ShopScreen() {
     setPurchaseQuantity(1);
   };
 
-  const handleSelectPet = (petId: string) => {
-    setCurrentPet(petId);
+  const handleSelectPet = async (petType: string) => {
+    if (!accessToken) {
+      setSelectedPet(null);
+      return;
+    }
+
+    try {
+      const petUuid = petUuidMap.get(petType);
+      if (!petUuid) {
+        Alert.alert(
+          'Error',
+          'Pet not found. Please try again.',
+          [{ text: 'OK', style: 'default' }]
+        );
+        setSelectedPet(null);
+        return;
+      }
+
+      const result = await apiClient.setMainPet(petUuid, accessToken);
+      if (result.success && result.data) {
+        setCurrentPet(petType);
+        Alert.alert(
+          'Pet Selected!',
+          `${result.data.mainPet.name} is now your main pet!`,
+          [{ text: 'OK', style: 'default' }]
+        );
+      } else {
+        Alert.alert(
+          'Selection Failed',
+          'Failed to set main pet. Please try again.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error selecting pet:', error);
+      Alert.alert(
+        'Selection Failed',
+        'Failed to set main pet. Please try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
+    }
+    
     setSelectedPet(null);
   };
 

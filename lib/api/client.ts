@@ -228,6 +228,89 @@ interface AdoptPetResponse {
   usedMarathonPoints: number;
 }
 
+interface MainPet {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface GetMainPetResponse {
+  message: string;
+  mainPet: MainPet;
+}
+
+interface PetDetail {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface GetPetDetailResponse {
+  message: string;
+  pet: PetDetail;
+}
+
+interface SetMainPetRequest {
+  petId: string;
+}
+
+interface SetMainPetResponse {
+  message: string;
+  mainPet: MainPet;
+}
+
+interface UserPet {
+  uuid: string;
+  name: string;
+  type: string;
+  level: number;
+  experience: number;
+  experienceToNextLevel: number;
+  experienceProgress: number;
+  happiness: number;
+  hunger: number;
+  status: string;
+  petImage: string | null;
+  lastFedAt: string | null;
+  lastPlayedAt: string | null;
+  createdAt: string;
+}
+
+interface GetUserPetsResponse {
+  message: string;
+  data: UserPet[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export const apiClient = {
   async post<T>(endpoint: string, data: any, token?: string): Promise<ApiResponse<T>> {
     try {
@@ -376,5 +459,21 @@ export const apiClient = {
 
   async adoptPet(petData: AdoptPetRequest, token?: string): Promise<ApiResponse<AdoptPetResponse>> {
     return this.post<AdoptPetResponse>('/pets/adopt', petData, token);
+  },
+
+  async getMainPet(token?: string): Promise<ApiResponse<GetMainPetResponse>> {
+    return this.get<GetMainPetResponse>('/pets/main', token);
+  },
+
+  async getPetDetail(petUuid: string, token?: string): Promise<ApiResponse<GetPetDetailResponse>> {
+    return this.get<GetPetDetailResponse>(`/pets/${petUuid}`, token);
+  },
+
+  async setMainPet(petId: string, token?: string): Promise<ApiResponse<SetMainPetResponse>> {
+    return this.post<SetMainPetResponse>('/pets/main', { petId }, token);
+  },
+
+  async getUserPets(token?: string): Promise<ApiResponse<GetUserPetsResponse>> {
+    return this.get<GetUserPetsResponse>('/pets/', token);
   },
 };
