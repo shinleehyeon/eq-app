@@ -142,7 +142,7 @@ const FloatingPetBackground = ({ children }) => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, initializeUser, selectedPet, accessToken } = useUserStore();
+  const { user, initializeUser, selectedPet, accessToken, updateCoins } = useUserStore();
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTurtleAnimating, setIsTurtleAnimating] = useState(true);
   const [showPetModal, setShowPetModal] = useState(false);
@@ -225,11 +225,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const ensureUserInitialization = async () => {
       try {
-        if (!user || !user.id) {
-          console.warn('User is not initialized. Attempting to initialize user.');
-          await initializeUser();
-        }
-        
+        // Always fetch profile data first to get the most up-to-date info
         if (accessToken) {
           const result = await apiClient.getProfile(accessToken);
           if (result.success && result.data) {
@@ -237,7 +233,13 @@ export default function HomeScreen() {
             const coins = result.data.user.marathonPoints || 0;
             setDisplayCoins(coins);
             animatedCoinValue.setValue(coins);
+            updateCoins(coins);
           }
+        }
+        
+        if (!user || !user.id) {
+          console.warn('User is not initialized. Attempting to initialize user.');
+          await initializeUser();
         }
         
         setIsInitializing(false);
@@ -312,7 +314,7 @@ export default function HomeScreen() {
     email: 'guest@example.com',
     level: 1,
     streak: 0,
-    coins: 500,
+    coins: 0,
     completedQuests: [],
     badges: [],
     plants: [],

@@ -138,25 +138,16 @@ export default function SignUpScreen() {
               createdAt: new Date().toISOString(),
             });
 
-            setUser({
-              id: user.uid,
-              name,
-              email,
-              level: 1,
-              streak: 0,
-              completedQuests: [],
-              badges: [],
-              plants: [],
-              followers: [],
-              following: [],
-              settings: {
-                notifications: true,
-                darkMode: false,
-                language: 'en'
-              }
-            }, response.data.accessToken);
-
-            router.replace('/(tabs)');
+            Alert.alert(
+              'Account Created Successfully!',
+              'Your account has been created. Please sign in to continue.',
+              [
+                { 
+                  text: 'OK', 
+                  onPress: () => router.replace('/auth/sign-in')
+                }
+              ]
+            );
           } catch (firebaseError) {
             console.error('Firebase signup error:', firebaseError);
             const error = firebaseError as { code?: string };
