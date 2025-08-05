@@ -173,6 +173,20 @@ interface GetMyItemsResponse {
   items: MyItem[];
 }
 
+export interface ShopAnimal {
+  type: string;
+  defaultName: string;
+  adoptionCost: number;
+  description: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  owned: boolean;
+}
+
+interface GetShopAnimalsResponse {
+  message: string;
+  animals: ShopAnimal[];
+}
+
 interface PurchaseItemRequest {
   itemName: string;
   quantity: number;
@@ -326,5 +340,9 @@ export const apiClient = {
 
   async purchaseItem(itemName: string, quantity: number, token?: string): Promise<ApiResponse<PurchaseItemResponse>> {
     return this.post<PurchaseItemResponse>('/pets/shop/buy', { itemName, quantity }, token);
+  },
+
+  async getShopAnimals(token?: string): Promise<ApiResponse<GetShopAnimalsResponse>> {
+    return this.get<GetShopAnimalsResponse>('/pets/shop/animals', token);
   },
 };

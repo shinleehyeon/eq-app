@@ -19,9 +19,21 @@ import LottieView from 'lottie-react-native';
 import { X, Star, Coins, ArrowLeft, Check, Apple, Gamepad2, Lock } from 'lucide-react-native';
 import Button from '@/components/Button';
 import { useUserStore } from '@/store/user-store';
-import { apiClient } from '@/lib/api/client';
+import { apiClient, ShopAnimal } from '@/lib/api/client';
 
 const { width: screenWidth } = Dimensions.get('window');
+
+const getAnimationSource = (type: string) => {
+  const animationMap: { [key: string]: any } = {
+    parrot: require('@/assets/animation/bird.json'),
+    bird: require('@/assets/animation/bird.json'),
+    duck: require('@/assets/animation/duck.json'),
+    turtle: require('@/assets/animation/turtle.json'),
+    giraffe: require('@/assets/animation/giraffe.json'),
+  };
+  
+  return animationMap[type] || require('@/assets/animation/bird.json');
+};
 
 interface Pet {
   id: string;
@@ -46,44 +58,6 @@ interface ShopItem {
 
 type TabType = 'pets' | 'food' | 'toys';
 
-const pets: Pet[] = [
-  {
-    id: 'bird',
-    name: 'Sky Guardian',
-    price: 200,
-    description: 'A graceful bird that monitors air quality and spreads eco-awareness.',
-    animationSource: require('@/assets/animation/bird.json'),
-    rarity: 'common',
-    owned: true,
-  },
-  {
-    id: 'duck',
-    name: 'Oceande Duck',
-    price: 100,
-    description: 'A cheerful duck that loves keeping the environment clean!',
-    animationSource: require('@/assets/animation/duck.json'),
-    rarity: 'common',
-    owned: true,
-  },
-  {
-    id: 'turtle',
-    name: 'Sea Turtle', 
-    price: 250,
-    description: 'A wise turtle that protects ocean life and reduces plastic waste.',
-    animationSource: require('@/assets/animation/turtle.json'),
-    rarity: 'rare',
-    owned: false,
-  },
-  {
-    id: 'giraffe',
-    name: 'Forest Giant',
-    price: 500,
-    description: 'A gentle giraffe that helps protect forests and plant trees.',
-    animationSource: require('@/assets/animation/giraffe.json'),
-    rarity: 'epic',
-    owned: false,
-  },
-];
 
 const rarityColors = {
   common: '#9E9E9E',
@@ -100,7 +74,8 @@ export default function ShopScreen() {
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('pets');
   const [userCoins, setUserCoins] = useState(0);
-  const [ownedPets, setOwnedPets] = useState<string[]>(['duck', 'bird']);
+  const [ownedPets, setOwnedPets] = useState<string[]>([]);
+  const [shopAnimals, setShopAnimals] = useState<Pet[]>([]);
   const [ownedItems, setOwnedItems] = useState<string[]>([]);
   const [shopFoodItems, setShopFoodItems] = useState<ShopItem[]>([]);
   const [shopToyItems, setShopToyItems] = useState<ShopItem[]>([]);
@@ -142,14 +117,15 @@ export default function ShopScreen() {
   }, [userCoins]);
 
   useEffect(() => {
-    const fetchShopItems = async () => {
+    const fetchShopData = async () => {
       if (accessToken) {
-        const [shopResult, myItemsResult] = await Promise.all([
+        const [shopItemsResult, myItemsResult, shopAnimalsResult] = await Promise.all([
           apiClient.getShopItems(accessToken),
-          apiClient.getMyItems(accessToken)
+          apiClient.getMyItems(accessToken),
+          apiClient.getShopAnimals(accessToken)
         ]);
 
-        if (shopResult.success && shopResult.data && myItemsResult.success && myItemsResult.data) {
+        if (shopItemsResult.success && shopItemsResult.data && myItemsResult.success && myItemsResult.data) {
           const myItemsSet = new Set(
             myItemsResult.data.items.map(item => item.name)
           );
@@ -157,7 +133,7 @@ export default function ShopScreen() {
             myItemsResult.data.items.map(item => [item.name, item.quantity])
           );
 
-          const foodItems = shopResult.data.items
+          const foodItems = shopItemsResult.data.items
             .filter(item => item.type === 'food')
             .map((item, index) => ({
               id: item.name,
@@ -170,7 +146,7 @@ export default function ShopScreen() {
               quantity: myItemsQuantityMap.get(item.name) || 0
             }));
           
-          const toyItems = shopResult.data.items
+          const toyItems = shopItemsResult.data.items
             .filter(item => item.type === 'toy')
             .map((item, index) => ({
               id: item.name,
@@ -191,9 +167,28 @@ export default function ShopScreen() {
             .map(item => item.id);
           setOwnedItems(ownedItemIds);
         }
+
+        if (shopAnimalsResult.success && shopAnimalsResult.data) {
+          const animals = shopAnimalsResult.data.animals.map(animal => ({
+            id: animal.type,
+            name: animal.defaultName,
+            price: animal.adoptionCost,
+            description: animal.description,
+            animationSource: getAnimationSource(animal.type),
+            rarity: animal.rarity,
+            owned: animal.owned,
+          }));
+          
+          setShopAnimals(animals);
+          
+          const ownedAnimalIds = animals
+            .filter(animal => animal.owned)
+            .map(animal => animal.id);
+          setOwnedPets(ownedAnimalIds);
+        }
       }
     };
-    fetchShopItems();
+    fetchShopData();
   }, [accessToken]);
 
   const handlePurchasePet = (pet: Pet) => {
@@ -420,7 +415,7 @@ export default function ShopScreen() {
           <>
             <Text style={styles.sectionTitle}>Available Pets</Text>
             <View style={styles.petsGrid}>
-              {pets.map((pet) => (
+              {shopAnimals.map((pet) => (
                 <PetCard key={pet.id} pet={pet} />
               ))}
             </View>
