@@ -216,7 +216,7 @@ export default function ShopScreen() {
           <View style={styles.lockOverlay}>
             <View style={styles.lockBadge}>
               <Coins size={14} color={colors.white} />
-              <Text style={styles.lockText}>{pet.price}</Text>
+              <Text style={styles.lockText}>Locked</Text>
             </View>
           </View>
         )}

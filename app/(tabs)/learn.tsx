@@ -120,16 +120,7 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{
-          title: 'Learn',
-          headerRight: () => (
-            <TouchableOpacity onPress={() => router.push('/add-eco-tip')}>
-              <Plus size={24} color={colors.primary} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <Stack.Screen options={{ title: 'Learn' }} />
       
       <View style={styles.tabContainer}>
         {resourceTypes.map((type) => (
