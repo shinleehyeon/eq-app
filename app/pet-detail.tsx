@@ -216,16 +216,15 @@ export default function PetDetailScreen() {
 
   const showLoveEffect = () => {
     const positions = [
-      { x: -100, y: 20 },   // 왼쪽
-      { x: 0, y: 0 },       // 중앙
-      { x: 100, y: 20 },    // 오른쪽
+      { x: -100, y: 20 },
+      { x: 0, y: 0 },
+      { x: 100, y: 20 },
     ];
     
     for (let i = 0; i < 3; i++) {
       setTimeout(() => {
         const id = Date.now() + i;
         const basePos = positions[i];
-        // 각 기본 위치에서 약간의 랜덤 오프셋 추가
         const x = basePos.x + (-20 + Math.random() * 40);
         const y = basePos.y + (-20 + Math.random() * 40);
         
@@ -234,7 +233,7 @@ export default function PetDetailScreen() {
         setTimeout(() => {
           setLoveAnimations(prev => prev.filter(anim => anim.id !== id));
         }, 2000);
-      }, i * 200); // 200ms delay between each heart
+      }, i * 200);
     }
   };
 
@@ -255,10 +254,8 @@ export default function PetDetailScreen() {
         const response = await apiClient.useItem(petData.uuid, item.id, accessToken || undefined);
         
         if (response.success && response.data) {
-          // 펫 데이터 업데이트
           setPetData(response.data.pet);
           
-          // 아이템 수량 감소
           setFoodItems(prev => 
             prev.map(food => 
               food.id === item.id 
@@ -270,7 +267,6 @@ export default function PetDetailScreen() {
           showLoveEffect();
           setExpandedCard(null);
           
-          // 레벨업 메시지 표시
           if (response.data.leveledUp) {
             Alert.alert(
               "Level Up!",
@@ -291,17 +287,13 @@ export default function PetDetailScreen() {
   const handlePlayWithPet = async (item: OwnedItem) => {
     if (!petData) return;
     
-    // happiness는 100 이상도 가능하므로 제한 없이 진행
-    
     if (item.count > 0) {
       try {
         const response = await apiClient.useItem(petData.uuid, item.id, accessToken || undefined);
         
         if (response.success && response.data) {
-          // 펫 데이터 업데이트
           setPetData(response.data.pet);
           
-          // 아이템 수량 감소
           setToyItems(prev => 
             prev.map(toy => 
               toy.id === item.id 
@@ -313,7 +305,6 @@ export default function PetDetailScreen() {
           showLoveEffect();
           setExpandedCard(null);
           
-          // 레벨업 메시지 표시
           if (response.data.leveledUp) {
             Alert.alert(
               "Level Up!",
@@ -592,7 +583,7 @@ const styles = StyleSheet.create({
   },
   loveAnimationContainer: {
     position: 'absolute',
-    top: 100,
+    top: 50,
     left: '50%',
     marginLeft: -60,
     zIndex: 10,
