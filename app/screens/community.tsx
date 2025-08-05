@@ -57,9 +57,20 @@ interface CreateCommunityDto {
   tags?: string[];
 }
 
+interface CommunityStats {
+  totalMembers: number;
+  todayPosts: number;
+  growthRate: number;
+}
+
 export default function CommunityScreen() {
   const { accessToken } = useUserStore();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [stats, setStats] = useState<CommunityStats>({
+    totalMembers: 0,
+    todayPosts: 0,
+    growthRate: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddStory, setShowAddStory] = useState(false);
@@ -68,6 +79,20 @@ export default function CommunityScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  const fetchStats = async () => {
+    try {
+      const response = await apiClient.get(
+        "/community/stats",
+        accessToken || undefined
+      );
+      if (response.success && response.data) {
+        setStats((response.data as any).stats);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
 
   const fetchPosts = async (pageNum: number = 1, refresh: boolean = false) => {
     try {
@@ -100,10 +125,12 @@ export default function CommunityScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    fetchStats();
     fetchPosts(1, true);
   };
 
   useEffect(() => {
+    fetchStats();
     fetchPosts(1, true);
   }, []);
 
@@ -284,17 +311,21 @@ export default function CommunityScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Users size={20} color={colors.primary} />
-            <Text style={styles.statValue}>2.4K</Text>
+            <Text style={styles.statValue}>
+              {stats.totalMembers >= 1000
+                ? `${(stats.totalMembers / 1000).toFixed(1)}K`
+                : stats.totalMembers.toString()}
+            </Text>
             <Text style={styles.statLabel}>Members</Text>
           </View>
           <View style={styles.statItem}>
             <MessageCircle size={20} color={colors.success} />
-            <Text style={styles.statValue}>{posts.length}</Text>
+            <Text style={styles.statValue}>{stats.todayPosts}</Text>
             <Text style={styles.statLabel}>Posts Today</Text>
           </View>
           <View style={styles.statItem}>
             <TrendingUp size={20} color={colors.warning} />
-            <Text style={styles.statValue}>15%</Text>
+            <Text style={styles.statValue}>{stats.growthRate}%</Text>
             <Text style={styles.statLabel}>Growth</Text>
           </View>
         </View>
