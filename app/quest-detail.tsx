@@ -12,6 +12,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import colors from "@/constants/colors";
@@ -56,8 +57,7 @@ export default function QuestDetailScreen() {
   const [proofImage, setProofImage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // Find the quest from either daily or open quests
-  const quest = [...dailyQuests, ...openQuests].find((q) => q.id === questId);
+  const quest = [...dailyQuests, ...openQuests].find((q) => q.uuid === questId);
   const isActive = activeQuests.includes(questId);
   const isCompleted = user?.completedQuests?.includes(questId);
   const canSelectMore = activeQuests.length < 5;
@@ -176,8 +176,12 @@ export default function QuestDetailScreen() {
       >
         {/* Hero Image */}
         <View style={styles.heroContainer}>
-          {quest.imageUrl ? (
-            <Image source={{ uri: quest.imageUrl }} style={styles.heroImage} />
+          {quest.mainImageUrl ? (
+            <Image
+              source={{ uri: quest.mainImageUrl }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
           ) : (
             <View style={[styles.heroImage, styles.placeholderImage]}>
               <Leaf size={60} color={colors.white} />
@@ -209,20 +213,17 @@ export default function QuestDetailScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Coins size={16} color={colors.warning} />
-              <Text style={styles.statText}>{quest.points} points</Text>
+              <Text style={styles.statText}>
+                {quest.rewardMarathonPoints} points
+              </Text>
             </View>
 
             <View style={styles.statItem}>
               <Clock size={16} color={colors.info} />
-              <Text style={styles.statText}>{quest.duration || "30 min"}</Text>
+              <Text style={styles.statText}>
+                {quest.expectedTime || "30 min"}
+              </Text>
             </View>
-
-            {quest.participants && (
-              <View style={styles.statItem}>
-                <Users size={16} color={colors.success} />
-                <Text style={styles.statText}>{quest.participants} joined</Text>
-              </View>
-            )}
           </View>
 
           {/* Description */}
@@ -231,32 +232,11 @@ export default function QuestDetailScreen() {
             <Text style={styles.description}>{quest.description}</Text>
           </View>
 
-          {/* Requirements */}
-          {quest.requirements && (
-            <View style={styles.requirementsContainer}>
-              <Text style={styles.sectionTitle}>Requirements</Text>
-              {quest.requirements.map((req, index) => (
-                <View key={index} style={styles.requirementItem}>
-                  <CheckCircle size={16} color={colors.primary} />
-                  <Text style={styles.requirementText}>{req}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Tips */}
-          {quest.tips && (
-            <View style={styles.tipsContainer}>
-              <Text style={styles.sectionTitle}>💡 Tips</Text>
-              <Text style={styles.tipsText}>{quest.tips}</Text>
-            </View>
-          )}
-
           {/* Impact */}
-          {quest.impact && (
+          {quest.environmentalImpact && (
             <View style={styles.impactContainer}>
               <Text style={styles.sectionTitle}>🌍 Environmental Impact</Text>
-              <Text style={styles.impactText}>{quest.impact}</Text>
+              <Text style={styles.impactText}>{quest.environmentalImpact}</Text>
             </View>
           )}
         </View>
@@ -270,28 +250,11 @@ export default function QuestDetailScreen() {
             <Text style={styles.completedText}>Quest Completed!</Text>
           </View>
         ) : (
-          <View style={styles.buttonRow}>
-            <Button
-              title={isActive ? "Remove from My Quests" : "Select Quest"}
-              onPress={handleSelectQuest}
-              style={
-                isActive
-                  ? [styles.selectButton, styles.removeButton]
-                  : styles.selectButton
-              }
-              disabled={!isActive && !canSelectMore}
-            />
-            <Button
-              title="Complete Quest"
-              onPress={handleCompleteQuest}
-              style={
-                !isActive
-                  ? [styles.completeButton, styles.disabledButton]
-                  : styles.completeButton
-              }
-              disabled={!isActive}
-            />
-          </View>
+          <Button
+            title="Submit Proof"
+            onPress={handleCompleteQuest}
+            style={styles.completeButton}
+          />
         )}
       </View>
 
@@ -530,27 +493,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  actionButton: {
-    width: "100%",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  selectButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-  },
-  removeButton: {
-    backgroundColor: colors.error,
-  },
   completeButton: {
     flex: 1,
     backgroundColor: colors.success,
-  },
-  disabledButton: {
-    backgroundColor: colors.border,
-    opacity: 0.5,
+    marginBottom: 16,
+    paddingVertical: 16,
   },
   completedBadge: {
     flexDirection: "row",
