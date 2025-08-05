@@ -365,6 +365,19 @@ interface CheckQuizSolvedResponseDto {
   solvedAt: string | null;
 }
 
+interface UseItemRequest {
+  petId: string;
+  itemName: string;
+}
+
+interface UseItemResponse {
+  message: string;
+  pet: PetDetail;
+  gainedExperience: number;
+  leveledUp: boolean;
+  userExperienceGained: number;
+}
+
 export const apiClient = {
   async post<T>(
     endpoint: string,
@@ -660,6 +673,18 @@ export const apiClient = {
   ): Promise<ApiResponse<CheckQuizSolvedResponseDto>> {
     return this.get<CheckQuizSolvedResponseDto>(
       `/learning-quiz/check-solved/article/${articleId}`,
+      token
+    );
+  },
+
+  async useItem(
+    petId: string,
+    itemName: string,
+    token?: string
+  ): Promise<ApiResponse<UseItemResponse>> {
+    return this.post<UseItemResponse>(
+      "/pets/use-item",
+      { petId, itemName },
       token
     );
   },

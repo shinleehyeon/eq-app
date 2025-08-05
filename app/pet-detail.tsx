@@ -217,7 +217,7 @@ export default function PetDetailScreen() {
     }, 2000);
   };
 
-  const handleFeedPet = (item: OwnedItem) => {
+  const handleFeedPet = async (item: OwnedItem) => {
     if (!petData) return;
     
     if (petData.hunger === 0) {
@@ -230,48 +230,83 @@ export default function PetDetailScreen() {
     }
     
     if (item.count > 0) {
-      setFoodItems(prev => 
-        prev.map(food => 
-          food.id === item.id 
-            ? { ...food, count: food.count - 1 }
-            : food
-        )
-      );
-      setPetData(prev => prev ? {
-        ...prev,
-        hunger: Math.max(0, prev.hunger - 15)
-      } : null);
-      showLoveEffect();
-      setExpandedCard(null);
+      try {
+        const response = await apiClient.useItem(petData.uuid, item.id, accessToken || undefined);
+        
+        if (response.success && response.data) {
+          // 펫 데이터 업데이트
+          setPetData(response.data.pet);
+          
+          // 아이템 수량 감소
+          setFoodItems(prev => 
+            prev.map(food => 
+              food.id === item.id 
+                ? { ...food, count: food.count - 1 }
+                : food
+            )
+          );
+          
+          showLoveEffect();
+          setExpandedCard(null);
+          
+          // 레벨업 메시지 표시
+          if (response.data.leveledUp) {
+            Alert.alert(
+              "Level Up!",
+              `${response.data.pet.name} has reached level ${response.data.pet.level}!`,
+              [{ text: "Great!" }]
+            );
+          }
+        } else {
+          Alert.alert('Error', response.error || 'Failed to use item');
+        }
+      } catch (error) {
+        console.error('Error using item:', error);
+        Alert.alert('Error', 'Failed to use item');
+      }
     }
   };
 
-  const handlePlayWithPet = (item: OwnedItem) => {
+  const handlePlayWithPet = async (item: OwnedItem) => {
     if (!petData) return;
     
-    if (petData.happiness === 100) {
-      Alert.alert(
-        "Pet is Very Happy!",
-        `${petData.name} is already at maximum happiness! Maybe try feeding them instead?`,
-        [{ text: "OK" }]
-      );
-      return;
-    }
+    // happiness는 100 이상도 가능하므로 제한 없이 진행
     
     if (item.count > 0) {
-      setToyItems(prev => 
-        prev.map(toy => 
-          toy.id === item.id 
-            ? { ...toy, count: toy.count - 1 }
-            : toy
-        )
-      );
-      setPetData(prev => prev ? {
-        ...prev,
-        happiness: Math.min(100, prev.happiness + 10)
-      } : null);
-      showLoveEffect();
-      setExpandedCard(null);
+      try {
+        const response = await apiClient.useItem(petData.uuid, item.id, accessToken || undefined);
+        
+        if (response.success && response.data) {
+          // 펫 데이터 업데이트
+          setPetData(response.data.pet);
+          
+          // 아이템 수량 감소
+          setToyItems(prev => 
+            prev.map(toy => 
+              toy.id === item.id 
+                ? { ...toy, count: toy.count - 1 }
+                : toy
+            )
+          );
+          
+          showLoveEffect();
+          setExpandedCard(null);
+          
+          // 레벨업 메시지 표시
+          if (response.data.leveledUp) {
+            Alert.alert(
+              "Level Up!",
+              `${response.data.pet.name} has reached level ${response.data.pet.level}!`,
+              [{ text: "Great!" }]
+            );
+          }
+        } else {
+          Alert.alert('Error', response.error || 'Failed to use item');
+        }
+      } catch (error) {
+        console.error('Error using item:', error);
+        Alert.alert('Error', 'Failed to use item');
+      }
     }
   };
 
@@ -445,19 +480,19 @@ export default function PetDetailScreen() {
             <View style={styles.statItem}>
               <Utensils size={20} color={colors.warning} />
               <Text style={styles.statTitle}>Hunger</Text>
-              <Text style={styles.statValue}>{petData.hunger}%</Text>
+              <Text style={styles.statValue}>{petData.hunger}</Text>
             </View>
             <View style={styles.statItem}>
               <Heart size={20} color={colors.error} />
               <Text style={styles.statTitle}>Happiness</Text>
-              <Text style={styles.statValue}>{petData.happiness}%</Text>
+              <Text style={styles.statValue}>{petData.happiness}</Text>
             </View>
           </View>
           
           <View style={styles.progressSection}>
             <Text style={styles.progressLabel}>Experience</Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${Math.max(0, petData.experienceProgress)}%` }]} />
+              <View style={[styles.progressFill, { width: `${Math.max(0, Math.min(100, (petData.experience / petData.experienceToNextLevel) * 100))}%` }]} />
             </View>
             <Text style={styles.progressText}>{petData.experience}/{petData.experienceToNextLevel} XP to next level</Text>
           </View>
