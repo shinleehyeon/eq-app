@@ -617,6 +617,10 @@ export const apiClient = {
     return this.get<ProfileResponse>("/auth/profile", token);
   },
 
+  async getUserProfile(userId: string, token?: string): Promise<ApiResponse<ProfileResponse>> {
+    return this.get<ProfileResponse>(`/users/${userId}/profile`, token);
+  },
+
   async getShopItems(
     token?: string
   ): Promise<ApiResponse<GetShopItemsResponse>> {

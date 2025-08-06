@@ -52,7 +52,17 @@ const MarathonLeaderboardItem: React.FC<MarathonLeaderboardItemProps> = ({
     if (isCurrentUser) {
       router.push('/(tabs)/profile');
     } else {
-      router.push(`/user-profile/${userId}`);
+      // Pass the entire entry data as URL parameters for fallback
+      const params = new URLSearchParams({
+        userId: userId,
+        userName: userName,
+        userLevel: userLevel.toString(),
+        marathonPoints: marathonPoints.toString(),
+        completedQuests: completedQuests.toString(),
+        rank: rank.toString()
+      }).toString();
+      
+      router.push(`/api-user-profile/${userId}?${params}`);
     }
   };
   

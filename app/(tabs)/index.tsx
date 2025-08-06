@@ -165,9 +165,9 @@ export default function HomeScreen() {
   const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const originalBannerImages = [
-    require('@/assets/images/banner0.png'),
+    require('@/assets/images/banner4.png'),
     require('@/assets/images/banner1.jpeg'),
-    require('@/assets/images/banner2.png'),
+    require('@/assets/images/banner6.jpg'),
   ];
 
   const bannerImages = originalBannerImages;
