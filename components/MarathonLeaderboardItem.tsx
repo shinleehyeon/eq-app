@@ -14,6 +14,7 @@ interface MarathonLeaderboardEntry {
   completedQuests: number;
   progress: number;
   reachedMilestones: number;
+  profileImage?: string;
 }
 
 interface MarathonLeaderboardItemProps {
@@ -26,7 +27,7 @@ const MarathonLeaderboardItem: React.FC<MarathonLeaderboardItemProps> = ({
   isCurrentUser = false 
 }) => {
   const router = useRouter();
-  const { rank, userId, userName, userLevel, marathonPoints, completedQuests } = entry;
+  const { rank, userId, userName, userLevel, marathonPoints, completedQuests, profileImage } = entry;
   
   const getPositionColor = () => {
     switch (rank) {
@@ -52,7 +53,6 @@ const MarathonLeaderboardItem: React.FC<MarathonLeaderboardItemProps> = ({
     if (isCurrentUser) {
       router.push('/(tabs)/profile');
     } else {
-      // Pass the entire entry data as URL parameters for fallback
       const params = new URLSearchParams({
         userId: userId,
         userName: userName,
@@ -76,7 +76,7 @@ const MarathonLeaderboardItem: React.FC<MarathonLeaderboardItemProps> = ({
       </View>
       
       <Image 
-        source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330' }} 
+        source={{ uri: profileImage || 'https://avatars.githubusercontent.com/u/220717404?s=200&v=4' }} 
         style={styles.avatar} 
       />
       
