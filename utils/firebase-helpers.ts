@@ -130,10 +130,22 @@ export const updateUserAvatar = async (userId: string, avatarUrl: string) => {
 
 export const fetchUserDataFromFirebase = async (userId: string): Promise<User | null> => {
   try {
+    // Check if user is authenticated before accessing Firebase
+    if (!auth.currentUser) {
+      console.warn('User not authenticated, cannot fetch user data from Firebase');
+      return null;
+    }
+    
     const snapshot = await get(ref(database, `users/${userId}`));
     return snapshot.val();
   } catch (error) {
     console.error('Error fetching user data:', error);
+    
+    // Handle permission denied errors specifically
+    if (error instanceof Error && error.message.includes('Permission denied')) {
+      console.warn('Permission denied accessing Firebase database. User may not be properly authenticated.');
+    }
+    
     return null;
   }
 };
@@ -147,6 +159,12 @@ export const fetchAuthorById = async (authorId: string) => {
   if (!authorId) return null;
   
   try {
+    // Check if user is authenticated before accessing Firebase
+    if (!auth.currentUser) {
+      console.warn('User not authenticated, cannot fetch author data from Firebase');
+      return null;
+    }
+    
     const snapshot = await get(ref(database, `users/${authorId}`));
     if (snapshot.exists()) {
       const userData = snapshot.val();
@@ -159,6 +177,12 @@ export const fetchAuthorById = async (authorId: string) => {
     return null;
   } catch (error) {
     console.error('Error fetching author data:', error);
+    
+    // Handle permission denied errors specifically
+    if (error instanceof Error && error.message.includes('Permission denied')) {
+      console.warn('Permission denied accessing Firebase database. User may not be properly authenticated.');
+    }
+    
     return null;
   }
 };

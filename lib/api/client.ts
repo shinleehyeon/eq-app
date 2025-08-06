@@ -431,9 +431,19 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
+        
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please sign in again.');
+        }
+        
+        // Try to parse JSON error response for more specific error messages
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+        } catch {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
       }
 
       const result = await response.json();
@@ -473,9 +483,19 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
+        
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please sign in again.');
+        }
+        
+        // Try to parse JSON error response for more specific error messages
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+        } catch {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
       }
 
       const result = await response.json();
@@ -544,9 +564,19 @@ export const apiClient = {
         console.error(
           `API Error - Status: ${response.status}, Response: ${errorText}`
         );
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
+        
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please sign in again.');
+        }
+        
+        // Try to parse JSON error response for more specific error messages
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+        } catch {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
       }
 
       const result = await response.json();
@@ -581,9 +611,19 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
+        
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please sign in again.');
+        }
+        
+        // Try to parse JSON error response for more specific error messages
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+        } catch {
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
       }
 
       const result = await response.json();
