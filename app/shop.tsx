@@ -419,29 +419,30 @@ export default function ShopScreen() {
 
   const ItemCard = ({ item }: { item: ShopItem }) => {
     const isOwned = ownedItems.includes(item.id);
+    const isOutOfStock = (item.quantity || 0) === 0;
     return (
       <TouchableOpacity
         style={[
           styles.itemCard,
-          !isOwned && styles.notOwnedCard
+          (!isOwned || isOutOfStock) && styles.notOwnedCard
         ]}
         onPress={() => setSelectedItem(item)}
         activeOpacity={0.8}
       >
-        {!isOwned && (
+        {(!isOwned || isOutOfStock) && (
           <View style={styles.lockOverlay}>
             <View style={styles.lockBadge}>
               <Lock size={14} color={colors.white} />
-              <Text style={styles.lockText}>LOCKED</Text>
+              <Text style={styles.lockText}>{!isOwned ? 'LOCKED' : 'LOCKED'}</Text>
             </View>
           </View>
         )}
         
-        <View style={[styles.itemIconContainer, !isOwned && styles.grayscale]}>
-          <Text style={[styles.itemIcon, !isOwned && { opacity: 0.5 }]}>{item.icon}</Text>
+        <View style={[styles.itemIconContainer, (!isOwned || isOutOfStock) && styles.grayscale]}>
+          <Text style={[styles.itemIcon, (!isOwned || isOutOfStock) && { opacity: 0.5 }]}>{item.icon}</Text>
         </View>
         
-        <Text style={[styles.itemName, !isOwned && styles.notOwnedText]}>{item.name}</Text>
+        <Text style={[styles.itemName, (!isOwned || isOutOfStock) && styles.notOwnedText]}>{item.name}</Text>
         
         {!isOwned ? (
           <View style={styles.priceContainer}>
@@ -1037,5 +1038,28 @@ const styles = StyleSheet.create({
     ...typography.heading3,
     minWidth: 60,
     textAlign: 'center',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  lockedContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  lockedTitle: {
+    ...typography.heading3,
+    color: colors.textSecondary,
+    marginTop: 16,
+    marginBottom: 8,
+    fontWeight: 'bold',
+  },
+  lockedDescription: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

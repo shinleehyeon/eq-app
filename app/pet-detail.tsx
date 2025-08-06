@@ -22,6 +22,7 @@ import {
   Trophy,
   Gamepad2,
   Apple,
+  Lock,
 } from "lucide-react-native";
 import Button from "@/components/Button";
 import { useUserStore } from "@/store/user-store";
@@ -467,11 +468,12 @@ export default function PetDetailScreen() {
                       ))}
                     {itemsLoading ? (
                       <ActivityIndicator size="small" color={colors.white} />
-                    ) : foodItems.filter((item) => item.count > 0).length ===
-                      0 ? (
-                      <Text style={styles.emptyText}>
-                        No food available. Visit the shop!
-                      </Text>
+                    ) : totalFood === 0 ? (
+                      <View style={styles.lockedContainer}>
+                        <Lock size={24} color={colors.white} />
+                        <Text style={styles.lockedText}>Food Locked</Text>
+                        <Text style={styles.lockedSubtext}>No food items available!</Text>
+                      </View>
                     ) : null}
                   </Animated.View>
                 )}
@@ -522,11 +524,12 @@ export default function PetDetailScreen() {
                       ))}
                     {itemsLoading ? (
                       <ActivityIndicator size="small" color={colors.white} />
-                    ) : toyItems.filter((item) => item.count > 0).length ===
-                      0 ? (
-                      <Text style={styles.emptyText}>
-                        No toys available. Visit the shop!
-                      </Text>
+                    ) : totalToys === 0 ? (
+                      <View style={styles.lockedContainer}>
+                        <Lock size={24} color={colors.white} />
+                        <Text style={styles.lockedText}>Toys Locked</Text>
+                        <Text style={styles.lockedSubtext}>No toy items available!</Text>
+                      </View>
                     ) : null}
                   </Animated.View>
                 )}
@@ -813,6 +816,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     padding: 12,
+  },
+  lockedContainer: {
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  lockedText: {
+    ...typography.bodySmall,
+    color: colors.white,
+    fontWeight: "bold",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  lockedSubtext: {
+    ...typography.caption,
+    color: colors.white,
+    opacity: 0.8,
   },
   loadingContainer: {
     flex: 1,
