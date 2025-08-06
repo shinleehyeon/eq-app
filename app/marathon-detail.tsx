@@ -16,6 +16,7 @@ import LottieView from 'lottie-react-native';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
+import { useLeaderboardStore } from '@/store/leaderboard-store';
 import { apiClient } from '@/lib/api/client';
 
 const { width } = Dimensions.get('window');
@@ -65,6 +66,7 @@ interface MarathonProgress {
 
 export default function MarathonDetailScreen() {
   const { selectedPet, accessToken } = useUserStore();
+  const { fetchMarathonLeaderboard } = useLeaderboardStore();
   const { id } = useLocalSearchParams();
   const [marathon, setMarathon] = useState<Marathon | null>(null);
   const [marathonProgress, setMarathonProgress] = useState<MarathonProgress | null>(null);
@@ -98,8 +100,11 @@ export default function MarathonDetailScreen() {
     }
   };
   
-  const handleViewLeaderboard = () => {
-    router.push('/screens/leaderboard');
+  const handleViewLeaderboard = async () => {
+    if (id && typeof id === 'string') {
+      await fetchMarathonLeaderboard(id, accessToken || undefined);
+      router.push('/screens/leaderboard');
+    }
   };
 
   const getSelectedPetAnimation = () => {
@@ -212,15 +217,6 @@ export default function MarathonDetailScreen() {
     return (marathonProgress.progress / 100) * totalDistance;
   };
 
-  const getEarnedMarathonPoints = () => {
-    if (!marathonProgress || !marathon?.spots) return 0;
-    
-    const completedSpots = marathon.spots.filter((_, index) => 
-      index < marathonProgress.reachedMilestones
-    );
-    
-    return completedSpots.reduce((total, spot) => total + spot.marathonPointsBonus, 0);
-  };
 
   const currentProgress = getCurrentProgress();
   
@@ -237,32 +233,6 @@ export default function MarathonDetailScreen() {
     x = startX + col * badgeSpacing;
     
     return { x, y };
-  };
-  
-  const createPath = () => {
-    const positions = milestones.map(m => getPosition(m.row, m.col));
-    let pathData = `M ${positions[0].x} ${positions[0].y}`;
-    
-    for (let i = 1; i < positions.length; i++) {
-      const prev = positions[i - 1];
-      const curr = positions[i];
-      
-      if (i === 3 || i === 6) {
-        const isRightToLeft = i === 6;
-        const curveOffset = isRightToLeft ? -100 : 100;
-        
-        const cp1x = prev.x + curveOffset;
-        const cp1y = prev.y + 40;
-        const cp2x = curr.x - curveOffset;
-        const cp2y = curr.y - 40;
-        
-        pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.y}`;
-      } else {
-        pathData += ` L ${curr.x} ${curr.y}`;
-      }
-    }
-    
-    return pathData;
   };
   
   const isCompleted = (distance: number) => distance <= currentProgress;

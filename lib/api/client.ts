@@ -384,6 +384,30 @@ interface HomeDataResponse {
   activeMarathonName: string | null;
 }
 
+interface MarathonLeaderboardEntry {
+  rank: number;
+  userId: string;
+  userName: string;
+  userLevel: number;
+  marathonPoints: number;
+  completedQuests: number;
+  progress: number;
+  reachedMilestones: number;
+}
+
+interface GetMarathonLeaderboardResponse {
+  message: string;
+  data: MarathonLeaderboardEntry[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export const apiClient = {
   async post<T>(
     endpoint: string,
@@ -696,5 +720,12 @@ export const apiClient = {
 
   async getHomeData(token?: string): Promise<ApiResponse<HomeDataResponse>> {
     return this.get<HomeDataResponse>("/root/home", token);
+  },
+
+  async getMarathonLeaderboard(
+    marathonId: string,
+    token?: string
+  ): Promise<ApiResponse<GetMarathonLeaderboardResponse>> {
+    return this.get<GetMarathonLeaderboardResponse>(`/marathons/${marathonId}/leaderboard`, token);
   },
 };

@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity,
   SafeAreaView
 } from 'react-native';
 import { Stack } from 'expo-router';
@@ -12,124 +11,52 @@ import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useLeaderboardStore } from '@/store/leaderboard-store';
 import { useUserStore } from '@/store/user-store';
-import LeaderboardItem from '@/components/LeaderboardItem';
+import MarathonLeaderboardItem from '@/components/MarathonLeaderboardItem';
 
 export default function LeaderboardScreen() {
   const { 
-    entries, 
-    timeframe, 
-    scope, 
-    fetchLeaderboard, 
-    setTimeframe, 
-    setScope,
+    marathonEntries,
     isLoading
   } = useLeaderboardStore();
   const { user } = useUserStore();
-  
-  useEffect(() => {
-    fetchLeaderboard(timeframe, scope);
-  }, [timeframe, scope]);
-  
-  const timeframeOptions = [
-    { id: 'weekly', label: 'This Week' },
-    { id: 'monthly', label: 'This Month' },
-    { id: 'allTime', label: 'All Time' },
-  ];
-  
-  const scopeOptions = [
-    { id: 'local', label: 'Local' },
-    { id: 'global', label: 'Global' },
-  ];
   
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
         options={{
-          title: 'Leaderboard',
+          title: 'Marathon Leaderboard',
           headerTitleStyle: styles.headerTitle,
         }} 
       />
       
-      <View style={styles.filtersContainer}>
-        <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Time:</Text>
-          <View style={styles.filterOptions}>
-            {timeframeOptions.map((option) => (
-              <TouchableOpacity
-                key={option.id}
-                style={[
-                  styles.filterOption,
-                  timeframe === option.id && styles.activeFilterOption
-                ]}
-                onPress={() => setTimeframe(option.id as 'weekly' | 'monthly' | 'allTime')}
-              >
-                <Text 
-                  style={[
-                    styles.filterOptionText,
-                    timeframe === option.id && styles.activeFilterOptionText
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        
-        <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Scope:</Text>
-          <View style={styles.filterOptions}>
-            {scopeOptions.map((option) => (
-              <TouchableOpacity
-                key={option.id}
-                style={[
-                  styles.filterOption,
-                  scope === option.id && styles.activeFilterOption
-                ]}
-                onPress={() => setScope(option.id as 'local' | 'global')}
-              >
-                <Text 
-                  style={[
-                    styles.filterOptionText,
-                    scope === option.id && styles.activeFilterOptionText
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </View>
-      
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
-            {entries.length > 0 ? entries[0].completedQuestsCount : 0}
+            {marathonEntries && marathonEntries.length > 0 ? marathonEntries[0].marathonPoints : 0}
           </Text>
-          <Text style={styles.statLabel}>Top Quests</Text>
+          <Text style={styles.statLabel}>Top Points</Text>
         </View>
         
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
-            {entries.length}
+            {marathonEntries ? marathonEntries.length : 0}
           </Text>
           <Text style={styles.statLabel}>Participants</Text>
         </View>
         
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
-            {user ? user.completedQuests?.length || 0 : 0}
+            {marathonEntries ? marathonEntries.find(entry => entry.userId === user?.id)?.rank || '-' : '-'}
           </Text>
-          <Text style={styles.statLabel}>Your Quests</Text>
+          <Text style={styles.statLabel}>Your Rank</Text>
         </View>
       </View>
       
       <FlatList
-        data={entries}
+        data={marathonEntries || []}
         keyExtractor={(item) => item.userId}
         renderItem={({ item }) => (
-          <LeaderboardItem 
+          <MarathonLeaderboardItem 
             entry={item}
             isCurrentUser={user ? item.userId === user.id : false}
           />
@@ -138,7 +65,7 @@ export default function LeaderboardScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {isLoading ? 'Loading leaderboard...' : 'No leaderboard data available.'}
+              {isLoading ? 'Loading leaderboard...' : 'No marathon leaderboard data available.'}
             </Text>
           </View>
         }
@@ -154,39 +81,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.heading2,
-  },
-  filtersContainer: {
-    backgroundColor: colors.card,
-    padding: 16,
-  },
-  filterGroup: {
-    marginBottom: 12,
-  },
-  filterLabel: {
-    ...typography.bodySmall,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  filterOptions: {
-    flexDirection: 'row',
-  },
-  filterOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.background,
-    marginRight: 8,
-  },
-  activeFilterOption: {
-    backgroundColor: colors.primary,
-  },
-  filterOptionText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  activeFilterOptionText: {
-    color: 'white',
-    fontWeight: '600',
   },
   statsContainer: {
     flexDirection: 'row',
