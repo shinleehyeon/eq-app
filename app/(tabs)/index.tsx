@@ -10,7 +10,8 @@ import {
   Dimensions,
   Animated,
   Modal,
-  Easing
+  Easing,
+  Image
 } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
@@ -158,6 +159,64 @@ export default function HomeScreen() {
   const animationRef = React.useRef(null);
   const timeoutRef = React.useRef<number | null>(null);
   const animatedCoinValue = useRef(new Animated.Value(0)).current;
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [isReverse, setIsReverse] = useState(false);
+  const bannerScrollRef = useRef<ScrollView>(null);
+  const bannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const originalBannerImages = [
+    require('@/assets/images/banner0.png'),
+    require('@/assets/images/banner1.jpeg'),
+    require('@/assets/images/banner2.png'),
+  ];
+
+  const bannerImages = originalBannerImages;
+
+  const startBannerAutoSlide = useCallback(() => {
+    if (bannerIntervalRef.current) {
+      clearInterval(bannerIntervalRef.current);
+    }
+    bannerIntervalRef.current = setInterval(() => {
+      setCurrentBannerIndex((prevIndex) => {
+        setIsReverse((prevReverse) => {
+          let nextIndex;
+          let nextReverse = prevReverse;
+          
+          if (!prevReverse) {
+            nextIndex = prevIndex + 1;
+            if (nextIndex >= bannerImages.length - 1) {
+              nextReverse = true;
+            }
+          } else {
+            nextIndex = prevIndex - 1;
+            if (nextIndex <= 0) {
+              nextReverse = false;
+            }
+          }
+          
+          if (bannerScrollRef.current) {
+            bannerScrollRef.current.scrollTo({
+              x: nextIndex * (screenWidth - 32),
+              animated: true,
+            });
+          }
+          
+          return nextReverse;
+        });
+        
+        return isReverse 
+          ? (prevIndex <= 0 ? 0 : prevIndex - 1)
+          : (prevIndex >= bannerImages.length - 1 ? bannerImages.length - 1 : prevIndex + 1);
+      });
+    }, 2000);
+  }, [bannerImages.length, isReverse]);
+
+  const stopBannerAutoSlide = useCallback(() => {
+    if (bannerIntervalRef.current) {
+      clearInterval(bannerIntervalRef.current);
+      bannerIntervalRef.current = null;
+    }
+  }, []);
   
   const getAnimationSource = () => {
     const petType = mainPetData?.type || selectedPet;
@@ -327,13 +386,23 @@ export default function HomeScreen() {
     }
   }, [user?.coins, animateCoins]);
 
+  useFocusEffect(
+    useCallback(() => {
+      startBannerAutoSlide();
+      return () => {
+        stopBannerAutoSlide();
+      };
+    }, [startBannerAutoSlide, stopBannerAutoSlide])
+  );
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      stopBannerAutoSlide();
     };
-  }, []);
+  }, [stopBannerAutoSlide]);
   
   if (isInitializing) {
     return (
@@ -415,6 +484,37 @@ export default function HomeScreen() {
               <Text style={styles.statLabel}>Pet Items</Text>
             </View>
           </View>
+        </View>
+
+        <View style={styles.bannerContainer}>
+          <ScrollView
+            ref={bannerScrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScrollBeginDrag={() => {
+              stopBannerAutoSlide();
+            }}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / (screenWidth - 32));
+              setCurrentBannerIndex(index);
+              
+              setTimeout(() => {
+                startBannerAutoSlide();
+              }, 2000);
+            }}
+            style={styles.bannerScrollView}
+          >
+            {bannerImages.map((image, index) => (
+              <TouchableOpacity key={index} style={styles.bannerImageContainer}>
+                <Image 
+                  source={image} 
+                  style={styles.bannerImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         <View style={styles.marathonStatusContainer}>
@@ -626,6 +726,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
+    paddingTop: 30,
   },
   userStatsContainer: {
     backgroundColor: colors.card,
@@ -1011,5 +1112,40 @@ const styles = StyleSheet.create({
     color: colors.success,
     marginLeft: 0,
     fontWeight: '600',
+  },
+  bannerContainer: {
+    alignSelf: 'stretch',
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  bannerScrollView: {
+    height: 92.5,
+  },
+  bannerImageContainer: {
+    width: screenWidth - 32,
+    height: 92.5,
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  bannerIndicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  bannerIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  bannerIndicatorActive: {
+    backgroundColor: colors.primary,
+    width: 24,
+    borderRadius: 4,
   },
 });
