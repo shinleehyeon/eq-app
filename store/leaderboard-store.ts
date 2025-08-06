@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiClient } from '@/lib/api/client';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiClient } from "@/lib/api/client";
 
 interface MarathonLeaderboardEntry {
   rank: number;
@@ -12,15 +12,19 @@ interface MarathonLeaderboardEntry {
   completedQuests: number;
   progress: number;
   reachedMilestones: number;
+  profileImage?: string;
 }
 
 interface LeaderboardState {
   marathonEntries: MarathonLeaderboardEntry[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
-  fetchMarathonLeaderboard: (marathonId: string, token?: string) => Promise<void>;
+  fetchMarathonLeaderboard: (
+    marathonId: string,
+    token?: string
+  ) => Promise<void>;
 }
 
 export const useLeaderboardStore = create<LeaderboardState>()(
@@ -32,29 +36,38 @@ export const useLeaderboardStore = create<LeaderboardState>()(
 
       fetchMarathonLeaderboard: async (marathonId: string, token?: string) => {
         set({ isLoading: true, error: null });
-        
+
         try {
-          const response = await apiClient.getMarathonLeaderboard(marathonId, token);
-          
+          const response = await apiClient.getMarathonLeaderboard(
+            marathonId,
+            token
+          );
+
           if (response.success && response.data) {
-            set({ 
+            set({
               marathonEntries: response.data.data,
-              isLoading: false 
+              isLoading: false,
             });
           } else {
-            set({ error: response.error || 'Failed to fetch marathon leaderboard', isLoading: false });
+            set({
+              error: response.error || "Failed to fetch marathon leaderboard",
+              isLoading: false,
+            });
           }
         } catch (error) {
-          console.error('Error fetching marathon leaderboard:', error);
-          set({ error: 'Failed to fetch marathon leaderboard', isLoading: false });
+          console.error("Error fetching marathon leaderboard:", error);
+          set({
+            error: "Failed to fetch marathon leaderboard",
+            isLoading: false,
+          });
         }
-      }
+      },
     }),
     {
-      name: 'leaderboard-storage',
+      name: "leaderboard-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ 
-        marathonEntries: state.marathonEntries || []
+      partialize: (state) => ({
+        marathonEntries: state.marathonEntries || [],
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -62,7 +75,7 @@ export const useLeaderboardStore = create<LeaderboardState>()(
           state.isLoading = false;
           state.error = null;
         }
-      }
+      },
     }
   )
 );
