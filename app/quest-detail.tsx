@@ -133,7 +133,9 @@ export default function QuestDetailScreen() {
         typeof response.data === "object" &&
         "quest" in response.data
       ) {
-        setQuestData(response.data.quest as QuestData);
+        const questData = response.data.quest as QuestData;
+        
+        setQuestData(questData);
       } else {
         Alert.alert("Error", "Failed to fetch quest data");
       }
@@ -503,11 +505,11 @@ export default function QuestDetailScreen() {
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: getStatusColor(questData.status) },
+              { backgroundColor: getStatusColor(questData?.status || '') },
             ]}
           >
             <Text style={styles.statusText}>
-              {getStatusText(questData.status)}
+              {getStatusText(questData?.status || '')}
             </Text>
           </View>
         </View>
@@ -515,42 +517,42 @@ export default function QuestDetailScreen() {
         {/* Quest Badges */}
         <View style={styles.badgeContainer}>
           <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{questData.category}</Text>
+            <Text style={styles.categoryText}>{String(questData?.category || '')}</Text>
           </View>
 
           <View
             style={[
               styles.difficultyBadge,
-              { backgroundColor: getDifficultyColor(questData.difficulty) },
+              { backgroundColor: getDifficultyColor(questData?.difficulty || '') },
             ]}
           >
-            <Text style={styles.difficultyText}>{questData.difficulty}</Text>
+            <Text style={styles.difficultyText}>{String(questData?.difficulty || '')}</Text>
           </View>
         </View>
 
         {/* Quest Info */}
         <View style={styles.infoContainer}>
-          <Text style={styles.title}>{questData.title}</Text>
+          <Text style={styles.title}>{String(questData?.title || '')}</Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Coins size={16} color={colors.warning} />
               <Text style={styles.statText}>
-                {questData.rewardMarathonPoints} points
+                {questData?.rewardMarathonPoints || 0} points
               </Text>
             </View>
 
             <View style={styles.statItem}>
               <Clock size={16} color={colors.info} />
               <Text style={styles.statText}>
-                {questData.expectedTime || "30 min"}
+                {questData?.expectedTime || "30 min"}
               </Text>
             </View>
 
             <View style={styles.statItem}>
               <Users size={16} color={colors.primary} />
               <Text style={styles.statText}>
-                {questData.currentValue}/{questData.targetValue}
+                {questData?.currentValue || 0}/{questData?.targetValue || 0}
               </Text>
             </View>
           </View>
@@ -564,21 +566,21 @@ export default function QuestDetailScreen() {
                   {
                     width: `${Math.min(
                       100,
-                      (questData.currentValue / questData.targetValue) * 100
+                      ((questData?.currentValue || 0) / (questData?.targetValue || 1)) * 100
                     )}%`,
                   },
                 ]}
               />
             </View>
             <Text style={styles.progressText}>
-              {questData.currentValue} of {questData.targetValue} completed
+              {questData?.currentValue || 0} of {questData?.targetValue || 0} completed
             </Text>
           </View>
 
           {/* Description */}
           <View style={styles.descriptionContainer}>
             <Text style={styles.sectionTitle}>About this Quest</Text>
-            <Text style={styles.description}>{questData.description}</Text>
+            <Text style={styles.description}>{String(questData?.description || '')}</Text>
           </View>
 
           {/* Required Object - Only show for non-auto-complete quests */}
@@ -588,7 +590,7 @@ export default function QuestDetailScreen() {
               <View style={styles.requirementItem}>
                 <Leaf size={16} color={colors.primary} />
                 <Text style={styles.requirementText}>
-                  Detect: {questData.requiredObject}
+                  Detect: {String(questData?.requiredObject || '')}
                 </Text>
               </View>
             </View>
@@ -599,7 +601,7 @@ export default function QuestDetailScreen() {
             <View style={styles.impactContainer}>
               <Text style={styles.sectionTitle}>🌍 Environmental Impact</Text>
               <Text style={styles.impactText}>
-                {questData.environmentalImpact}
+                {String(questData?.environmentalImpact || '')}
               </Text>
             </View>
           )}
@@ -612,7 +614,7 @@ export default function QuestDetailScreen() {
                 <View key={attempt.uuid} style={styles.attemptItem}>
                   <View style={styles.attemptHeader}>
                     <Text style={styles.attemptDate}>
-                      {new Date(attempt.attemptedAt).toLocaleDateString()}
+                      {attempt?.attemptedAt ? new Date(attempt.attemptedAt).toLocaleDateString() : ''}
                     </Text>
                     <View
                       style={[
@@ -625,11 +627,11 @@ export default function QuestDetailScreen() {
                       </Text>
                     </View>
                   </View>
-                  {attempt.confidence && (
+                  {attempt?.confidence ? (
                     <Text style={styles.confidenceText}>
                       Confidence: {(attempt.confidence * 100).toFixed(1)}%
                     </Text>
-                  )}
+                  ) : null}
                 </View>
               ))}
             </View>
@@ -642,18 +644,17 @@ export default function QuestDetailScreen() {
               <View style={styles.rewardItem}>
                 <Coins size={16} color={colors.warning} />
                 <Text style={styles.rewardText}>
-                  +{questData.rewardMarathonPoints} Marathon Points
+                  +{questData?.rewardMarathonPoints || 0} Marathon Points
                 </Text>
               </View>
               <View style={styles.rewardItem}>
                 <Users size={16} color={colors.primary} />
                 <Text style={styles.rewardText}>
-                  +{questData.rewardExperience} Experience Points
+                  +{questData?.rewardExperience || 0} Experience Points
                 </Text>
               </View>
               <Text style={styles.completionDate}>
-                Completed on{" "}
-                {new Date(questData.completedAt).toLocaleDateString()}
+                Completed on{questData?.completedAt ? ` ${new Date(questData.completedAt).toLocaleDateString()}` : ''}
               </Text>
             </View>
           )}
@@ -661,32 +662,32 @@ export default function QuestDetailScreen() {
       </ScrollView>
 
       {/* Action Buttons */}
-      <View style={styles.actionContainer}>
-        {isCompleted ? (
-          <View style={styles.completedBadge}>
-            <CheckCircle size={20} color={colors.success} />
-            <Text style={styles.completedText}>Quest Completed!</Text>
-          </View>
-        ) : !isActive ? (
-          <Button
-            title={selecting ? "Selecting..." : "Select Quest"}
-            onPress={handleSelectQuest}
-            style={styles.singleButton}
-            disabled={selecting}
-          />
-        ) : (
-          <View style={styles.buttonRow}>
-            {shouldShowCompleteButton && (
+      {(isCompleted || !isActive || shouldShowCompleteButton) && (
+        <View style={styles.actionContainer}>
+          {isCompleted ? (
+            <View style={styles.completedBadge}>
+              <CheckCircle size={20} color={colors.success} />
+              <Text style={styles.completedText}>Quest Completed!</Text>
+            </View>
+          ) : !isActive ? (
+            <Button
+              title={selecting ? "Selecting..." : "Select Quest"}
+              onPress={handleSelectQuest}
+              style={styles.singleButton}
+              disabled={selecting}
+            />
+          ) : shouldShowCompleteButton ? (
+            <View style={styles.buttonRow}>
               <Button
                 title="Complete Quest"
                 onPress={handleCompleteQuest}
                 style={styles.completeButton}
                 disabled={!canAttempt}
               />
-            )}
-          </View>
-        )}
-      </View>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       {/* Proof Submission Modal */}
       <Modal
@@ -709,7 +710,7 @@ export default function QuestDetailScreen() {
 
             <Text style={styles.modalDescription}>
               Take a photo showing how you completed this quest. Make sure the
-              required object ({questData.requiredObject}) is clearly visible in
+              required object ({questData?.requiredObject || ''}) is clearly visible in
               your image. The AI will automatically validate your submission.
             </Text>
 
@@ -834,7 +835,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.2)",
   },
   statusBadge: {
-    position: "absolute" as const,
+    position: "absolute",
     top: 20,
     right: 20,
     paddingHorizontal: 12,

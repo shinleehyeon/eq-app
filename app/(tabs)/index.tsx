@@ -219,7 +219,7 @@ export default function HomeScreen() {
   }, []);
   
   const getAnimationSource = () => {
-    const petType = mainPetData?.type || selectedPet;
+    const petType = mainPetData?.type || selectedPet || 'bird';
     switch(petType) {
       case 'turtle':
         return require('@/assets/animation/turtle.json');
@@ -281,7 +281,7 @@ export default function HomeScreen() {
     }
   };
 
-  const currentPet = mainPetData ? {
+  const currentPet = mainPetData && mainPetData.type ? {
     name: mainPetData.name,
     level: mainPetData.level,
     experience: mainPetData.experienceProgress || 0,
@@ -311,9 +311,11 @@ export default function HomeScreen() {
             updateCoins(coins);
           }
           
-          if (mainPetResult.success && mainPetResult.data) {
+          if (mainPetResult.success && mainPetResult.data && mainPetResult.data.mainPet) {
             setMainPetData(mainPetResult.data.mainPet);
-            setSelectedPet(mainPetResult.data.mainPet.type);
+            if (mainPetResult.data.mainPet.type) {
+              setSelectedPet(mainPetResult.data.mainPet.type);
+            }
           }
           
           if (homeResult.success && homeResult.data) {
@@ -364,11 +366,14 @@ export default function HomeScreen() {
       const refreshMainPet = async () => {
         if (accessToken) {
           const mainPetResult = await apiClient.getMainPet(accessToken);
-          if (mainPetResult.success && mainPetResult.data) {
+          if (mainPetResult.success && mainPetResult.data && mainPetResult.data.mainPet) {
             setMainPetData(mainPetResult.data.mainPet);
-            setSelectedPet(mainPetResult.data.mainPet.type);
+            if (mainPetResult.data.mainPet.type) {
+              setSelectedPet(mainPetResult.data.mainPet.type);
+            }
           }
           
+          const homeResult = await apiClient.getHomeData(accessToken);
           if (homeResult.success && homeResult.data) {
             setHomeData(homeResult.data);
           }
@@ -555,10 +560,10 @@ export default function HomeScreen() {
                   loop={false}
                   style={[
                     styles.petAnimation,
-                    (mainPetData?.type === 'duck' || selectedPet === 'duck') && styles.petAnimationDuck,
-                    (mainPetData?.type === 'turtle' || selectedPet === 'turtle') && styles.petAnimationTurtle,
-                    (mainPetData?.type === 'giraffe' || selectedPet === 'giraffe') && styles.petAnimationGiraffe,
-                    (mainPetData?.type === 'bird' || mainPetData?.type === 'parrot' || selectedPet === 'bird') && styles.petAnimationBird,
+                    ((mainPetData?.type === 'duck' || selectedPet === 'duck') && styles.petAnimationDuck),
+                    ((mainPetData?.type === 'turtle' || selectedPet === 'turtle') && styles.petAnimationTurtle),
+                    ((mainPetData?.type === 'giraffe' || selectedPet === 'giraffe') && styles.petAnimationGiraffe),
+                    ((mainPetData?.type === 'bird' || mainPetData?.type === 'parrot' || selectedPet === 'bird') && styles.petAnimationBird),
                   ]}
                   onAnimationFinish={() => {
                     setIsTurtleAnimating(false);
@@ -641,12 +646,14 @@ export default function HomeScreen() {
             </View>
             
             <View style={styles.modalPetContainer}>
-              <LottieView
-                source={getAnimationSource()}
-                autoPlay
-                loop
-                style={styles.modalPetAnimation}
-              />
+              {currentPet && (
+                <LottieView
+                  source={getAnimationSource()}
+                  autoPlay
+                  loop
+                  style={styles.modalPetAnimation}
+                />
+              )}
             </View>
             
             <View style={styles.petInfoSection}>
