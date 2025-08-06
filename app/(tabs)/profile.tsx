@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useUserStore } from '@/store/user-store';
@@ -58,30 +58,33 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
+  const fetchProfileData = React.useCallback(async () => {
+    if (!accessToken) {
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const response = await apiClient.get('/auth/profile', accessToken);
-        
-        if (response.success && response.data) {
-          setProfileData(response.data.user);
-        } else {
-          console.error('Failed to load profile data:', response.error);
-        }
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-      } finally {
-        setIsLoading(false);
+    try {
+      setIsLoading(true);
+      const response = await apiClient.get('/auth/profile', accessToken);
+      
+      if (response.success && response.data) {
+        setProfileData(response.data.user);
+      } else {
+        console.error('Failed to load profile data:', response.error);
       }
-    };
-
-    fetchProfileData();
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [accessToken]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchProfileData();
+    }, [fetchProfileData])
+  );
   
   const handleSignOut = async () => {
     try {
