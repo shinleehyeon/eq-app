@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -8,13 +8,14 @@ import {
   SafeAreaView,
   Image
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import colors from '@/constants/colors';
 import typography from '@/constants/typography';
 import { useQuestsStore } from '@/store/challenges-store';
 import { useUserStore } from '@/store/user-store';
 import QuestCard from '@/components/QuestCard';
 import { ArrowRight, Sparkles, Globe } from 'lucide-react-native';
+import { apiClient } from '@/lib/api/client';
 
 interface OpenQuest {
   id: string;
@@ -32,24 +33,48 @@ interface OpenQuest {
 export default function QuestsScreen() {
   const router = useRouter();
   const { 
-    dailyQuests, 
     openQuests,
-    activeQuests,
-    fetchDailyQuests,
     fetchOpenQuests,
-    selectQuest,
-    unselectQuest
   } = useQuestsStore();
-  const { users } = useUserStore();
+  const { accessToken } = useUserStore();
+  const [allDailyQuests, setAllDailyQuests] = useState<any[]>([]);
   
+  const fetchAllDailyQuests = useCallback(async () => {
+    if (!accessToken) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.get('/quests/daily', accessToken);
+      
+      if (response.success && response.data) {
+        const quests = response.data.data || response.data || [];
+        setAllDailyQuests(quests);
+      } else {
+        console.error('Failed to fetch daily quests:', response.error);
+        setAllDailyQuests([]);
+      }
+    } catch (error) {
+      console.error('Error fetching daily quests:', error);
+      setAllDailyQuests([]);
+    }
+  }, [accessToken]);
+
   useEffect(() => {
-    fetchDailyQuests();
     fetchOpenQuests();
-  }, []);
+  }, [fetchOpenQuests]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchAllDailyQuests();
+    }, [fetchAllDailyQuests])
+  );
   
-  const allQuests = [...dailyQuests, ...openQuests];
-  const selectedQuests = allQuests.filter(quest => activeQuests.includes(quest.uuid || quest.id!));
-  const availableQuests = allQuests.filter(quest => !activeQuests.includes(quest.uuid || quest.id!));
+  const selectedQuests = allDailyQuests.filter(quest => quest.isSelected === true);
+  const availableDailyQuests = allDailyQuests.filter(quest => quest.isSelected !== true);
+  
+  const allQuests = [...availableDailyQuests, ...openQuests];
+  const availableQuests = allQuests;
   
   return (
     <SafeAreaView style={styles.container}>

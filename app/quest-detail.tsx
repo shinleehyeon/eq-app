@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -58,11 +58,46 @@ export default function QuestDetailScreen() {
   const [proofImage, setProofImage] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectingQuest, setSelectingQuest] = useState(false);
+  const [selectedQuestsCount, setSelectedQuestsCount] = useState(0);
+  const [currentQuestData, setCurrentQuestData] = useState<any>(null);
 
   const quest = [...dailyQuests, ...openQuests].find((q) => q.uuid === questId);
-  const isActive = activeQuests.includes(questId);
+  const isActive = currentQuestData?.isSelected === true;
   const isCompleted = user?.completedQuests?.includes(questId);
-  const canSelectMore = activeQuests.length < 5;
+  const canSelectMore = selectedQuestsCount < 5;
+
+  // Debug logging
+  console.log('Quest Detail Debug:', {
+    questId,
+    isActive,
+    selectedQuestsCount,
+    currentQuestIsSelected: currentQuestData?.isSelected,
+    canSelectMore,
+    accessToken: !!accessToken
+  });
+
+  useEffect(() => {
+    const fetchQuestData = async () => {
+      if (!accessToken) return;
+
+      try {
+        const response = await apiClient.get('/quests/daily', accessToken);
+        
+        if (response.success && response.data) {
+          const allQuests = response.data.data || response.data || [];
+          const selectedQuests = allQuests.filter((q: any) => q.isSelected === true);
+          const currentQuest = allQuests.find((q: any) => q.uuid === questId);
+          
+          setSelectedQuestsCount(selectedQuests.length);
+          setCurrentQuestData(currentQuest);
+        }
+      } catch (error) {
+        console.error('Error fetching quest data:', error);
+      }
+    };
+
+    fetchQuestData();
+  }, [accessToken, questId]);
 
   if (!quest) {
     return (
@@ -73,6 +108,12 @@ export default function QuestDetailScreen() {
   }
 
   const handleSelectQuest = async () => {
+    console.log("=== SELECT QUEST DEBUG ===");
+    console.log("AccessToken:", !!accessToken);
+    console.log("IsActive:", isActive);
+    console.log("CanSelectMore:", canSelectMore);
+    console.log("QuestId:", questId);
+
     if (!accessToken) {
       Alert.alert("Authentication Required", "Please log in to select quests.");
       return;
@@ -82,19 +123,33 @@ export default function QuestDetailScreen() {
 
     try {
       if (isActive) {
+        console.log("Removing quest from active list");
         // Remove quest - could add API call here if needed
         unselectQuest(questId);
+        setSelectedQuestsCount(prev => Math.max(0, prev - 1));
+        setCurrentQuestData(prev => ({ ...prev, isSelected: false }));
         Alert.alert("Success", "Quest removed from your active quests.");
       } else if (canSelectMore) {
+        console.log("Selecting quest via API...");
         // Select quest via API
         const response = await apiClient.post(`/quests/${questId}/select`, {}, accessToken);
         
+        console.log("API Response:", response);
+        
         if (response.success) {
+          console.log("Quest selection successful");
           selectQuest(questId);
+          setSelectedQuestsCount(prev => prev + 1);
+          setCurrentQuestData(prev => ({ ...prev, isSelected: true }));
           Alert.alert("Success", "Quest added to your active quests!");
+          // Don't go back immediately - let user see the UI change
         } else {
+          console.log("Quest selection failed:", response.error);
           Alert.alert("Error", response.error || "Failed to select quest");
         }
+      } else {
+        console.log("Cannot select more quests - limit reached");
+        Alert.alert("Limit Reached", "You can only select up to 5 quests at a time.");
       }
     } catch (error) {
       console.error("Error selecting quest:", error);
