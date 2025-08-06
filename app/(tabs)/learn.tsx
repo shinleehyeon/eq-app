@@ -39,7 +39,6 @@ export default function LearnScreen() {
     }
 
     try {
-      // 실제 API에서 데이터 fetch
       const response = await apiClient.getLearningList(
         selectedType,
         pageNum,
@@ -51,17 +50,14 @@ export default function LearnScreen() {
         throw new Error(response.error || "학습 콘텐츠를 불러오지 못했습니다.");
       }
 
-      console.log("response", response.data);
-
       const { data, pagination } = response.data;
       const apiHasMore = pagination.hasNext;
 
-      // EcoTipCard에 맞게 데이터 변환
       const transformedItems = data.map((item: any) => ({
         ...item,
-        id: item.uuid, // EcoTipCard에서 id를 사용하므로 uuid를 id로 매핑
-        source: item.links?.[0] || "", // 작성자 이름을 source로 사용
-        imageUrl: item.thumbnail || item.links?.[0] || "", // 썸네일을 imageUrl로 사용
+        id: item.uuid,
+        source: item.links?.[0] || "",
+        imageUrl: item.thumbnail || item.links?.[0] || "",
         type: item.category || selectedType,
         userId: item.author?.uuid || "unknown",
         isDeleted: "false",
