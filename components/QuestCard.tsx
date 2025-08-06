@@ -1,11 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { Sparkles, Coins, Users, Timer, MapPin, Star } from 'lucide-react-native';
-import colors from '@/constants/colors';
-import typography from '@/constants/typography';
-import { fetchAuthorById } from '@/utils/firebase-helpers';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import {
+  Sparkles,
+  Coins,
+  Users,
+  Timer,
+  MapPin,
+  Star,
+} from "lucide-react-native";
+import colors from "@/constants/colors";
+import typography from "@/constants/typography";
+import { fetchAuthorById } from "@/utils/firebase-helpers";
 
-import { Quest } from '@/types';
+import { Quest } from "@/types";
 
 interface QuestCardProps {
   challenge: Quest;
@@ -15,6 +29,7 @@ interface QuestCardProps {
   onSelect?: (questId: string) => void;
   onUnselect?: (questId: string) => void;
   selectable?: boolean;
+  isCompleted?: boolean;
 }
 
 interface Author {
@@ -23,21 +38,22 @@ interface Author {
   avatarUrl: string;
 }
 
-export default function QuestCard({ 
-  challenge, 
-  isActive, 
-  onPress, 
-  showAuthor = false, 
-  onSelect, 
-  onUnselect, 
-  selectable = false 
+export default function QuestCard({
+  challenge,
+  isActive,
+  onPress,
+  showAuthor = false,
+  onSelect,
+  onUnselect,
+  selectable = false,
+  isCompleted = false,
 }: QuestCardProps) {
   const [author, setAuthor] = useState<Author | null>(null);
-  
+
   // Fetch author data directly from Firebase when needed
   useEffect(() => {
     if (showAuthor && challenge.authorId && !author) {
-      fetchAuthorById(challenge.authorId).then(authorData => {
+      fetchAuthorById(challenge.authorId).then((authorData) => {
         if (authorData) {
           setAuthor(authorData);
         }
@@ -52,55 +68,55 @@ export default function QuestCard({
   const getDaysLeft = () => {
     const deadline = challenge.endDate || challenge.submissionDeadline;
     if (!deadline) return null;
-    
+
     const deadlineDate = new Date(deadline);
     const currentDate = new Date();
-    
+
     // Calculate the difference in milliseconds
     const diffTime = deadlineDate.getTime() - currentDate.getTime();
-    
+
     // Convert to days and round
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays > 0 ? `${diffDays} days left` : 'Deadline passed';
+
+    return diffDays > 0 ? `${diffDays} days left` : "Deadline passed";
   };
 
   const getDifficultyColor = () => {
     switch (challenge.difficulty) {
-      case 'easy':
+      case "easy":
         return colors.success;
-      case 'medium':
+      case "medium":
         return colors.warning;
-      case 'hard':
+      case "hard":
         return colors.error;
       default:
         return colors.info;
     }
   };
-  
+
   const getCategoryIcon = () => {
     switch (challenge.category) {
-      case 'energy':
-        return '⚡';
-      case 'waste':
-        return '♻️';
-      case 'food':
-        return '🍎';
-      case 'transport':
-        return '🚲';
-      case 'water':
-        return '💧';
-      case 'advocacy':
-        return '📣';
-      case 'education':
-        return '📚';
-      case 'creative':
-        return '🎨';
+      case "energy":
+        return "⚡";
+      case "waste":
+        return "♻️";
+      case "food":
+        return "🍎";
+      case "transport":
+        return "🚲";
+      case "water":
+        return "💧";
+      case "advocacy":
+        return "📣";
+      case "education":
+        return "📚";
+      case "creative":
+        return "🎨";
       default:
-        return '🌱';
+        return "🌱";
     }
   };
-  
+
   const handlePress = () => {
     if (selectable) {
       if (isActive && onUnselect) {
@@ -122,8 +138,13 @@ export default function QuestCard({
       <View style={styles.cardContent}>
         {/* Left side - Image */}
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: challenge.mainImageUrl || challenge.imageUrl || 'https://images.unsplash.com/photo-1530587191325-3db32d826c18' }} 
+          <Image
+            source={{
+              uri:
+                challenge.mainImageUrl ||
+                challenge.imageUrl ||
+                "https://images.unsplash.com/photo-1530587191325-3db32d826c18",
+            }}
             style={styles.image}
             resizeMode="cover"
           />
@@ -131,47 +152,67 @@ export default function QuestCard({
             <Text style={styles.categoryEmoji}>{getCategoryIcon()}</Text>
           </View>
         </View>
-        
+
         {/* Right side - Content */}
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title} numberOfLines={1}>{challenge.title}</Text>
-            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor() }]}>
+            <Text style={styles.title} numberOfLines={1}>
+              {challenge.title}
+            </Text>
+            <View
+              style={[
+                styles.difficultyBadge,
+                { backgroundColor: getDifficultyColor() },
+              ]}
+            >
               <Text style={styles.difficultyText}>
                 {challenge.difficulty?.charAt(0).toUpperCase()}
               </Text>
             </View>
           </View>
-          
+
           <Text style={styles.description} numberOfLines={1}>
             {challenge.description}
           </Text>
-          
+
           {/* Stats row */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Coins size={12} color={colors.warning} />
-              <Text style={styles.statText}>{challenge.rewardMarathonPoints || challenge.points || 0}</Text>
+              <Text style={styles.statText}>
+                {challenge.rewardMarathonPoints || challenge.points || 0}
+              </Text>
             </View>
-            
+
             <View style={styles.statItem}>
               <Timer size={12} color={colors.info} />
-              <Text style={styles.statText}>{challenge.expectedTime || `${challenge.duration || 30}m`}</Text>
+              <Text style={styles.statText}>
+                {challenge.expectedTime || `${challenge.duration || 30}m`}
+              </Text>
             </View>
-            
+
             {showAuthor && (challenge.user || author) && (
               <View style={styles.statItem}>
                 <Users size={12} color={colors.textSecondary} />
-                <Text style={styles.statText}>{challenge.user?.name || author?.name}</Text>
+                <Text style={styles.statText}>
+                  {challenge.user?.name || author?.name}
+                </Text>
               </View>
             )}
           </View>
         </View>
-        
+
         {/* Active badge */}
         {isActive && (
           <View style={styles.activeBadge}>
             <View style={styles.activeDot} />
+          </View>
+        )}
+
+        {/* Completed badge */}
+        {isCompleted && (
+          <View style={styles.completedBadge}>
+            <Text style={styles.completedText}>✓</Text>
           </View>
         )}
       </View>
@@ -187,7 +228,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -196,12 +237,12 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   cardContent: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: 12,
   },
   image: {
@@ -214,14 +255,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 4,
   },
   title: {
     ...typography.body,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
     marginRight: 8,
   },
@@ -229,13 +270,13 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   difficultyText: {
     ...typography.caption,
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
     fontSize: 10,
   },
   description: {
@@ -244,13 +285,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   statText: {
@@ -259,15 +300,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   categoryIcon: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -4,
     width: 20,
     height: 20,
     borderRadius: 10,
     backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -275,7 +316,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   activeBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
   },
@@ -284,5 +325,21 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.primary,
+  },
+  completedBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.success,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  completedText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });
