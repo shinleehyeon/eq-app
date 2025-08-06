@@ -86,13 +86,11 @@ export default function LearningDetailScreen() {
 
         if (response.success && response.data) {
           setLearning(response.data as LearningDetailResponse);
-          console.log("s response", response.data);
         } else {
           Alert.alert("Error", "Learning content not found");
           router.back();
         }
       } catch (error) {
-        console.error("Error fetching learning:", error);
         Alert.alert("Error", "Failed to load learning content");
         router.back();
       } finally {
@@ -128,8 +126,12 @@ export default function LearningDetailScreen() {
           if (quizResponse.success && quizResponse.data) {
             setQuiz(quizResponse.data.quiz);
           }
-        } catch (error) {
-          console.log("This learning article has no quiz.");
+        } catch (error: any) {
+          if (error?.message?.includes('404')) {
+            console.log("This learning article has no quiz - this is normal.");
+          } else {
+            console.error("Error fetching quiz:", error);
+          }
         }
       } catch (error) {
         console.error("Error fetching quiz:", error);

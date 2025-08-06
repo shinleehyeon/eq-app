@@ -452,7 +452,10 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error("API error:", error);
+      // 404 에러가 아닌 경우에만 로그 출력
+      if (!(error instanceof Error && error.message.includes('404'))) {
+        console.error("API error:", error);
+      }
       return {
         success: false,
         error:
@@ -504,7 +507,10 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error("API error:", error);
+      // 404 에러가 아닌 경우에만 로그 출력
+      if (!(error instanceof Error && error.message.includes('404'))) {
+        console.error("API error:", error);
+      }
       return {
         success: false,
         error:
@@ -561,9 +567,13 @@ export const apiClient = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
-          `API Error - Status: ${response.status}, Response: ${errorText}`
-        );
+        
+        // 404 에러는 로그를 출력하지 않음 (퀴즈가 없는 경우 등 정상적인 상황일 수 있음)
+        if (response.status !== 404) {
+          console.error(
+            `API Error - Status: ${response.status}, Response: ${errorText}`
+          );
+        }
         
         // Handle authentication errors specifically
         if (response.status === 401 || response.status === 403) {
@@ -585,7 +595,10 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error("API error:", error);
+      // 404 에러가 아닌 경우에만 로그 출력
+      if (!(error instanceof Error && error.message.includes('404'))) {
+        console.error("API error:", error);
+      }
       return {
         success: false,
         error:
@@ -632,7 +645,10 @@ export const apiClient = {
         data: result,
       };
     } catch (error) {
-      console.error("API error:", error);
+      // 404 에러가 아닌 경우에만 로그 출력
+      if (!(error instanceof Error && error.message.includes('404'))) {
+        console.error("API error:", error);
+      }
       return {
         success: false,
         error:
@@ -722,10 +738,22 @@ export const apiClient = {
     articleId: string,
     token?: string
   ): Promise<ApiResponse<GetLearningQuizResponseDto>> {
-    return this.get<GetLearningQuizResponseDto>(
-      `/learning-quiz/article/${articleId}`,
-      token
-    );
+    try {
+      const result = await this.get<GetLearningQuizResponseDto>(
+        `/learning-quiz/article/${articleId}`,
+        token
+      );
+      return result;
+    } catch (error: any) {
+      // 404 에러는 퀴즈가 없는 경우이므로 정상적인 상황으로 처리
+      if (error?.message?.includes('404')) {
+        return {
+          success: false,
+          error: 'No quiz available for this article'
+        };
+      }
+      throw error;
+    }
   },
 
   async submitQuizAnswer(

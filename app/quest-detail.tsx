@@ -93,7 +93,6 @@ export default function QuestDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [selecting, setSelecting] = useState(false);
 
-  // Proof submission modal states
   const [showProofModal, setShowProofModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -103,13 +102,11 @@ export default function QuestDetailScreen() {
   const canAttempt =
     questData?.status === "pending" || questData?.status === "in_progress";
 
-  // 자동 완료되는 퀘스트 타입들
   const isAutoCompleteQuest =
     questData?.questType === "learning_article" ||
     questData?.questType === "learning_video" ||
     questData?.questType === "community";
 
-  // Complete Quest 버튼을 표시할지 결정
   const shouldShowCompleteButton =
     !isCompleted && !isAutoCompleteQuest && canAttempt;
 
@@ -179,7 +176,6 @@ export default function QuestDetailScreen() {
 
     try {
       if (isActive) {
-        // Deselect quest
         const response = await apiClient.post(
           `/quests/${questId}/deselect`,
           {},
@@ -195,7 +191,6 @@ export default function QuestDetailScreen() {
           Alert.alert("Error", response.error || "Failed to deselect quest");
         }
       } else {
-        // Select quest
         const response = await apiClient.post(
           `/quests/${questId}/select`,
           {},
@@ -230,7 +225,6 @@ export default function QuestDetailScreen() {
     }
 
     try {
-      // Create form data for file upload
       const formData = new FormData();
       const filename = imageUri.split("/").pop() || "image.jpg";
       const match = /\.(\w+)$/.exec(filename);
@@ -242,12 +236,10 @@ export default function QuestDetailScreen() {
         type: type,
       } as any);
 
-      // Upload image to backend
       const response = await fetch(`https://eqapi.juany.kr/upload/file`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          // Don't set Content-Type for FormData in React Native
         },
         body: formData,
       });
@@ -260,7 +252,6 @@ export default function QuestDetailScreen() {
       const result = await response.json();
       console.log("Upload response:", result);
 
-      // 백엔드 응답 구조에 따라 URL 추출
       let imageUrl = "";
       if (result.url && typeof result.url === "string") {
         imageUrl = result.url;
@@ -272,7 +263,6 @@ export default function QuestDetailScreen() {
         throw new Error("No URL in upload response");
       }
 
-      // URL이 상대 경로인 경우 절대 URL로 변환
       if (imageUrl.startsWith("/")) {
         imageUrl = `https://eqapi.juany.kr${imageUrl}`;
       } else if (!imageUrl.startsWith("http")) {
@@ -297,11 +287,9 @@ export default function QuestDetailScreen() {
     setUploadingImage(true);
 
     try {
-      // Upload image first
       const imageUrl = await uploadImage(selectedImage);
       setUploadingImage(false);
 
-      // Submit quest attempt
       const response = await apiClient.post(
         `/quests/${questId}/attempt`,
         {
@@ -336,7 +324,6 @@ export default function QuestDetailScreen() {
           );
         }
 
-        // Refresh quest data and attempts
         await fetchQuestData();
         await fetchQuestAttempts();
 
@@ -486,7 +473,6 @@ export default function QuestDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image */}
         <View style={styles.heroContainer}>
           {questData.mainImageUrl ? (
             <Image
@@ -501,7 +487,6 @@ export default function QuestDetailScreen() {
           )}
           <View style={styles.heroOverlay} />
 
-          {/* Status Badge */}
           <View
             style={[
               styles.statusBadge,
@@ -514,7 +499,6 @@ export default function QuestDetailScreen() {
           </View>
         </View>
 
-        {/* Quest Badges */}
         <View style={styles.badgeContainer}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{String(questData?.category || '')}</Text>
@@ -530,7 +514,6 @@ export default function QuestDetailScreen() {
           </View>
         </View>
 
-        {/* Quest Info */}
         <View style={styles.infoContainer}>
           <Text style={styles.title}>{String(questData?.title || '')}</Text>
 
@@ -557,7 +540,6 @@ export default function QuestDetailScreen() {
             </View>
           </View>
 
-          {/* Progress Bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
               <View
@@ -577,13 +559,11 @@ export default function QuestDetailScreen() {
             </Text>
           </View>
 
-          {/* Description */}
           <View style={styles.descriptionContainer}>
             <Text style={styles.sectionTitle}>About this Quest</Text>
             <Text style={styles.description}>{String(questData?.description || '')}</Text>
           </View>
 
-          {/* Required Object - Only show for non-auto-complete quests */}
           {!isAutoCompleteQuest && (
             <View style={styles.requirementContainer}>
               <Text style={styles.sectionTitle}>Required Object</Text>
@@ -596,7 +576,6 @@ export default function QuestDetailScreen() {
             </View>
           )}
 
-          {/* Impact */}
           {questData.environmentalImpact && (
             <View style={styles.impactContainer}>
               <Text style={styles.sectionTitle}>🌍 Environmental Impact</Text>
@@ -606,7 +585,6 @@ export default function QuestDetailScreen() {
             </View>
           )}
 
-          {/* Quest Attempts */}
           {questAttempts.length > 0 && (
             <View style={styles.attemptsContainer}>
               <Text style={styles.sectionTitle}>Your Attempts</Text>
@@ -637,7 +615,6 @@ export default function QuestDetailScreen() {
             </View>
           )}
 
-          {/* Completion Rewards */}
           {isCompleted && questData.completedAt && (
             <View style={styles.rewardsContainer}>
               <Text style={styles.sectionTitle}>🎉 Quest Completed!</Text>
@@ -661,7 +638,6 @@ export default function QuestDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Action Buttons */}
       {(isCompleted || !isActive || shouldShowCompleteButton) && (
         <View style={styles.actionContainer}>
           {isCompleted ? (
@@ -689,7 +665,6 @@ export default function QuestDetailScreen() {
         </View>
       )}
 
-      {/* Proof Submission Modal */}
       <Modal
         visible={showProofModal}
         transparent
