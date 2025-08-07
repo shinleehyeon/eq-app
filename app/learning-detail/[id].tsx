@@ -10,6 +10,7 @@ import {
   Share,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import colors from "@/constants/colors";
@@ -255,17 +256,34 @@ export default function LearningDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: "Learn",
+            headerTitleStyle: styles.headerTitle,
+          }} 
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!learning) {
     return (
-      <View style={styles.container}>
-        <Text>Learning content not found</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: "Learn",
+            headerTitleStyle: styles.headerTitle,
+          }} 
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Learning content not found</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -423,7 +441,7 @@ export default function LearningDetailScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
-          title: "Learning",
+          title: "Learn",
           headerTitleStyle: styles.headerTitle,
           headerRight: renderHeaderRight,
         }}
@@ -744,6 +762,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    ...typography.body,
+    color: colors.error,
   },
   headerTitle: {
     ...typography.heading3,

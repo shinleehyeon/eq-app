@@ -432,6 +432,12 @@ export default function QuestDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: "Quest",
+            headerTitleStyle: { fontSize: 18, fontWeight: '600' },
+          }} 
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading quest...</Text>
@@ -443,6 +449,12 @@ export default function QuestDetailScreen() {
   if (!questData) {
     return (
       <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{
+            title: "Quest",
+            headerTitleStyle: { fontSize: 18, fontWeight: '600' },
+          }} 
+        />
         <View style={styles.errorContainer}>
           <AlertCircle size={48} color={colors.error} />
           <Text style={styles.errorText}>Quest not found</Text>
