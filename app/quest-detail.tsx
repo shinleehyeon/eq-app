@@ -658,7 +658,7 @@ export default function QuestDetailScreen() {
                 title="Complete Quest"
                 onPress={handleCompleteQuest}
                 style={styles.completeButton}
-                disabled={!canAttempt}
+                disabled={!canAttempt || submitting || uploadingImage}
               />
             </View>
           ) : null}
@@ -705,14 +705,19 @@ export default function QuestDetailScreen() {
             )}
 
             <View style={styles.photoButtonsContainer}>
-              <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+              <TouchableOpacity 
+                style={[styles.photoButton, (submitting || uploadingImage) && styles.disabledPhotoButton]} 
+                onPress={takePhoto}
+                disabled={submitting || uploadingImage}
+              >
                 <Camera size={20} color={colors.primary} />
                 <Text style={styles.photoButtonText}>Take Photo</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.photoButton}
+                style={[styles.photoButton, (submitting || uploadingImage) && styles.disabledPhotoButton]}
                 onPress={pickFromGallery}
+                disabled={submitting || uploadingImage}
               >
                 <ImageIcon size={20} color={colors.primary} />
                 <Text style={styles.photoButtonText}>From Gallery</Text>
@@ -730,6 +735,7 @@ export default function QuestDetailScreen() {
               onPress={submitQuestAttempt}
               style={styles.submitButton}
               disabled={!selectedImage || submitting || uploadingImage}
+              isLoading={submitting || uploadingImage}
             />
           </View>
         </KeyboardAvoidingView>
@@ -1109,5 +1115,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 12,
     fontStyle: "italic",
+  },
+  disabledPhotoButton: {
+    backgroundColor: colors.border,
+    opacity: 0.5,
   },
 });

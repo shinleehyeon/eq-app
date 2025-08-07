@@ -95,7 +95,6 @@ export const useUserStore = create<UserState>()(
             following: [],
             settings: {
               notifications: true,
-              darkMode: false,
               language: 'en',
               privateProfile: false,
               hideEmail: false,
@@ -142,7 +141,6 @@ export const useUserStore = create<UserState>()(
             following: [],
             settings: {
               notifications: true,
-              darkMode: false,
               language: 'en',
               privateProfile: false,
               hideEmail: false,
@@ -313,7 +311,6 @@ export const useUserStore = create<UserState>()(
             following: userData.following || [],
             settings: userData.settings || {
               notifications: true,
-              darkMode: false,
               language: 'en',
               privateProfile: false,
               hideEmail: false,

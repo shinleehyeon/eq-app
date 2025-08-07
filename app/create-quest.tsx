@@ -466,10 +466,11 @@ export default function CreateQuestScreen() {
         </View>
         
         <Button
-          title="Create Quest"
-          icon={<Upload size={18} color={colors.background} />}
+          title={isSubmitting ? "Creating Quest..." : "Create Quest"}
+          leftIcon={<Upload size={18} color={colors.background} />}
           onPress={handleSubmit}
           disabled={isSubmitting}
+          isLoading={isSubmitting}
           style={styles.submitButton}
         />
         
@@ -729,5 +730,9 @@ const styles = StyleSheet.create({
   durationLabel: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  disabledButton: {
+    backgroundColor: colors.textSecondary,
+    opacity: 0.7,
   },
 });

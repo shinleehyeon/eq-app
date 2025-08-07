@@ -174,7 +174,7 @@ export default function EditProfileScreen() {
     }
   };
 
-  const defaultAvatar = require("@/assets/images/default-avatar.png");
+  const defaultAvatar = require("@/assets/images/logo.png");
   const avatarSource = avatar ? { uri: avatar } : defaultAvatar;
 
   return (

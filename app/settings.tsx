@@ -26,7 +26,6 @@ import {
   Lock, 
   Mail, 
   MessageSquare, 
-  Moon, 
   User, 
   UserX, 
   KeyRound 
@@ -57,9 +56,6 @@ export default function SettingsScreen() {
     updateSettings({ notifications: !settings.notifications });
   };
   
-  const handleToggleDarkMode = () => {
-    updateSettings({ darkMode: !settings.darkMode });
-  };
   
   const handleTogglePrivateProfile = () => {
     updateSettings({ privateProfile: !settings.privateProfile });
@@ -167,18 +163,6 @@ export default function SettingsScreen() {
             />
           </View>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Moon size={20} color={colors.primary} />
-              <Text style={styles.settingText}>Dark Mode</Text>
-            </View>
-            <Switch
-              value={settings.darkMode}
-              onValueChange={handleToggleDarkMode}
-              trackColor={{ false: colors.border, true: colors.primary + '80' }}
-              thumbColor={settings.darkMode ? colors.primary : colors.textSecondary}
-            />
-          </View>
         </View>
         
         <View style={styles.section}>

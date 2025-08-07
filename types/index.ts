@@ -13,7 +13,6 @@ export interface User {
     following: string[];
     settings: {
       notifications: boolean;
-      darkMode: boolean;
       language: string;
       privateProfile?: boolean;
       hideEmail?: boolean;

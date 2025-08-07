@@ -79,6 +79,7 @@ export default function CommunityScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -160,6 +161,8 @@ export default function CommunityScreen() {
       Alert.alert("Authentication Required", "Please log in to post a story.");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       let thumbnailUrl: string | undefined;
@@ -251,6 +254,8 @@ export default function CommunityScreen() {
     } catch (error) {
       console.error("Error creating post:", error);
       Alert.alert("Error", "Failed to post story");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -476,10 +481,13 @@ export default function CommunityScreen() {
                 )}
 
                 <TouchableOpacity
-                  style={styles.postButton}
+                  style={[styles.postButton, isSubmitting && styles.disabledButton]}
                   onPress={handleAddStory}
+                  disabled={isSubmitting}
                 >
-                  <Text style={styles.postButtonText}>Post Story</Text>
+                  <Text style={styles.postButtonText}>
+                    {isSubmitting ? 'Posting...' : 'Post Story'}
+                  </Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>
@@ -748,5 +756,9 @@ const styles = StyleSheet.create({
     ...typography.button,
     color: colors.white,
     fontWeight: "600",
+  },
+  disabledButton: {
+    backgroundColor: colors.textSecondary,
+    opacity: 0.7,
   },
 });
