@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EcoQuest Dupe",
-    "slug": "eco-quest dupe",
+    "slug": "eco-quest-dupe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,7 +21,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.juanlovemedia.ecoquest"
+      "package": "com.juanlovemedia.ecoquest",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -41,8 +44,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "077d786c-940c-4046-8a20-fcfdaae4534a"
+        "projectId": "e08ca744-751d-47ca-8241-0ffd8abee97b"
       }
-    }
+    },
+    "owner": "shinlee"
   }
 }
