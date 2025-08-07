@@ -17,7 +17,6 @@ import { useUserStore } from '@/store/user-store';
 import { 
   ChevronRight, 
   LogOut, 
-  Settings, 
   User as UserIcon,
   Coins,
   Trophy,
@@ -106,9 +105,6 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSettingsPress = () => {
-    router.push('/settings');
-  };
   
   if (isLoading) {
     return (
@@ -149,14 +145,6 @@ export default function ProfileScreen() {
         options={{
           title: 'Profile',
           headerTitleStyle: styles.headerTitle,
-          headerRight: () => (
-            <TouchableOpacity 
-              onPress={handleSettingsPress}
-              style={styles.headerButton}
-            >
-              <Settings size={24} color={colors.text} />
-            </TouchableOpacity>
-          ),
         }} 
       />
       
@@ -246,9 +234,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.heading2,
-  },
-  headerButton: {
-    padding: 8,
   },
   scrollView: {
     flex: 1,

@@ -179,9 +179,9 @@ export default function LearningDetailScreen() {
     const timer = setInterval(() => {
       setVideoWatchTime((prev) => {
         const newTime = prev + 1;
-        if (newTime >= 30) {
+        if (newTime === 30 && !videoQuestCompleted) {
+          // API 요청을 한 번만 보냄
           completeVideoQuest();
-          return newTime;
         }
         return newTime;
       });
@@ -191,7 +191,7 @@ export default function LearningDetailScreen() {
   }, [learning?.article, videoQuestCompleted]);
 
   const completeVideoQuest = async () => {
-    if (!accessToken || !learning?.article) return;
+    if (!accessToken || !learning?.article || videoQuestCompleted) return;
 
     try {
       const response = await apiClient.post(
@@ -202,25 +202,25 @@ export default function LearningDetailScreen() {
 
       if (response.success) {
         setVideoQuestCompleted(true);
-        Alert.alert("Quest Complete!", "Video watching quest has been completed!");
+        Alert.alert(
+          "Quest Complete! 🎉", 
+          "Video watching quest has been completed successfully!"
+        );
       } else {
-        if (response.error?.includes("not activated")) {
-          Alert.alert(
-            "Quest Not Activated",
-            "This video's quest is not activated. Please select a quest and try again."
-          );
-        } else {
-          Alert.alert(
-            "Error",
-            response.error || "An error occurred while completing the quest."
-          );
-        }
+        Alert.alert(
+          "Quest Failed",
+          response.error || "Failed to complete video quest. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error completing video quest:", error);
-      Alert.alert("Error", "An error occurred while completing the quest.");
+      Alert.alert(
+        "Error",
+        "An error occurred while completing the quest. Please check your connection and try again."
+      );
     }
   };
+
 
   const getYouTubeVideoId = (url: string) => {
     const regex = /(?:\?v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/;
@@ -670,7 +670,7 @@ export default function LearningDetailScreen() {
               ) : (
                 <View style={styles.videoTimerContainer}>
                   <Text style={styles.videoTimerText}>
-                    {30 - videoWatchTime} seconds left
+                    {videoWatchTime >= 30 ? 0 : 30 - videoWatchTime} seconds left
                   </Text>
                   <Text style={styles.videoTimerSubtext}>
                     Quest will be completed after watching for 30 seconds

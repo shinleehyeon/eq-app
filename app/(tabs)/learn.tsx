@@ -131,7 +131,12 @@ export default function LearnScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ title: "Learn" }} />
+      <Stack.Screen 
+        options={{ 
+          title: "Learn",
+          headerTitleStyle: styles.headerTitle,
+        }} 
+      />
 
       <View style={styles.tabContainer}>
         {resourceTypes.map((type) => (
@@ -190,6 +195,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  headerTitle: {
+    ...typography.heading2,
   },
   tabContainer: {
     flexDirection: "row",
