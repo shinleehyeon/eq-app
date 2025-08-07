@@ -54,7 +54,7 @@ interface ProfileData {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, accessToken } = useUserStore();
+  const { user, logout, accessToken, updateProfile } = useUserStore();
   const [isLoading, setIsLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   
@@ -69,7 +69,17 @@ export default function ProfileScreen() {
       const response = await apiClient.get('/auth/profile', accessToken);
       
       if (response.success && response.data) {
-        setProfileData(response.data.user);
+        const profileUser = response.data.user;
+        setProfileData(profileUser);
+        
+        // Sync profileImage to user store as avatar
+        if (profileUser.profileImage && profileUser.profileImage !== user?.avatar) {
+          updateProfile({
+            avatar: profileUser.profileImage,
+            name: profileUser.name,
+            email: profileUser.email,
+          });
+        }
       } else {
         console.error('Failed to load profile data:', response.error);
       }
@@ -78,7 +88,7 @@ export default function ProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, updateProfile, user?.avatar]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -117,9 +127,21 @@ export default function ProfileScreen() {
     );
   }
   
-  // Profile Header section
-  const defaultAvatar = require('@/assets/images/default-avatar.png');
-  const avatarSource = profileData?.profileImage ? { uri: profileData.profileImage } : defaultAvatar;
+  // Profile Header section - use both profileData and user store for avatar
+  const defaultAvatar = require('@/assets/images/logo.png');
+  
+  const getAvatarSource = () => {
+    // Priority: user store avatar (most recent) > profileData.profileImage (from API) > default
+    if (user?.avatar) {
+      return { uri: user.avatar };
+    } else if (profileData?.profileImage) {
+      return { uri: profileData.profileImage };
+    } else {
+      return defaultAvatar;
+    }
+  };
+  
+  const avatarSource = getAvatarSource();
 
   return (
     <SafeAreaView style={styles.container}>

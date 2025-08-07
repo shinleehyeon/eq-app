@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -29,6 +29,31 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState(user?.email || "");
   const [isLoading, setIsLoading] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || null);
+  
+  // Fetch current profile data and sync avatar
+  useEffect(() => {
+    const fetchCurrentProfile = async () => {
+      if (!accessToken) return;
+      
+      try {
+        const response = await apiClient.get('/auth/profile', accessToken);
+        if (response.success && response.data?.user) {
+          const profileUser = response.data.user;
+          console.log('Edit Profile - fetched profileImage:', profileUser.profileImage);
+          console.log('Edit Profile - current user avatar:', user?.avatar);
+          
+          // Update avatar state with the most recent profile image
+          if (profileUser.profileImage) {
+            setAvatar(profileUser.profileImage);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current profile:', error);
+      }
+    };
+    
+    fetchCurrentProfile();
+  }, [accessToken]);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const requestPermissions = async () => {
@@ -85,6 +110,10 @@ export default function EditProfileScreen() {
   };
 
   const uploadImage = async (uri: string): Promise<string> => {
+    if (!accessToken) {
+      throw new Error("Access token is required");
+    }
+
     try {
       // First compress the image
       const manipulatedImage = await manipulateAsync(
@@ -93,37 +122,56 @@ export default function EditProfileScreen() {
         { compress: 0.7, format: SaveFormat.JPEG }
       );
 
-      // Convert URI to Blob
-      const response = await fetch(manipulatedImage.uri);
-      const blob = await response.blob();
+      const formData = new FormData();
+      const filename = `avatar_${user?.id}_${Date.now()}.jpg`;
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : "image/jpeg";
 
-      // Create unique filename
-      const filename = `avatars/${user?.id}_${Date.now()}.jpg`;
-      const avatarRef = storageRef(storage, filename);
+      formData.append("file", {
+        uri: manipulatedImage.uri,
+        name: filename,
+        type: type,
+      } as any);
 
-      // Upload to Firebase Storage
-      const uploadTask = uploadBytesResumable(avatarRef, blob);
-
-      return new Promise((resolve, reject) => {
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-          },
-          (error) => {
-            reject(error);
-          },
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve(downloadURL);
-          }
-        );
+      const response = await fetch(`https://eqapi.juany.kr/upload/file/system`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("Upload response:", result);
+
+      let imageUrl = "";
+      if (result.url && typeof result.url === "string") {
+        imageUrl = result.url;
+      } else if (result.url && result.url.url) {
+        imageUrl = result.url.url;
+      } else if (result.data && result.data.url) {
+        imageUrl = result.data.url;
+      } else {
+        throw new Error("No URL in upload response");
+      }
+
+      // Ensure URL is absolute
+      if (imageUrl.startsWith("/")) {
+        imageUrl = `https://eqapi.juany.kr${imageUrl}`;
+      } else if (!imageUrl.startsWith("http")) {
+        imageUrl = `https://eqapi.juany.kr/${imageUrl}`;
+      }
+
+      console.log("Final image URL:", imageUrl);
+      return imageUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
-      throw error;
+      throw new Error("Failed to upload image");
     }
   };
 
@@ -139,12 +187,33 @@ export default function EditProfileScreen() {
     }
 
     setIsLoading(true);
+    setUploadProgress(0);
 
     try {
+      let profileImageUrl = user?.avatar || "";
+
+      // If a new image was selected (local URI), upload it first
+      if (avatar && avatar !== user?.avatar && (avatar.startsWith('file://') || avatar.startsWith('content://'))) {
+        try {
+          setUploadProgress(10);
+          profileImageUrl = await uploadImage(avatar);
+          setUploadProgress(70);
+        } catch (uploadError) {
+          console.error("Image upload error:", uploadError);
+          Alert.alert("Error", "Failed to upload profile image. Please try again.");
+          return;
+        }
+      } else if (avatar) {
+        // If it's already a URL (not changed), use it
+        profileImageUrl = avatar;
+      }
+
+      setUploadProgress(80);
+
       const profileData = {
         name: name.trim(),
         email: email.trim(),
-        profileImage: avatar || user?.avatar || "",
+        profileImage: profileImageUrl,
       };
 
       const apiResponse = await apiClient.updateProfile(
@@ -156,9 +225,11 @@ export default function EditProfileScreen() {
         await updateProfile({
           name,
           email,
-          avatar: avatar || user?.avatar || "",
+          avatar: profileImageUrl,
         });
 
+        setUploadProgress(100);
+        
         Alert.alert("Success", "Profile updated successfully", [
           { text: "OK", onPress: () => router.back() },
         ]);
@@ -175,7 +246,22 @@ export default function EditProfileScreen() {
   };
 
   const defaultAvatar = require("@/assets/images/logo.png");
-  const avatarSource = avatar ? { uri: avatar } : defaultAvatar;
+  
+  // Handle avatar display properly
+  const getAvatarSource = () => {
+    if (avatar) {
+      // If it's a local file (starts with file:// or content://) or a URL
+      return { uri: avatar };
+    } else if (user?.avatar) {
+      // If user has an avatar URL
+      return { uri: user.avatar };
+    } else {
+      // Default avatar
+      return defaultAvatar;
+    }
+  };
+  
+  const avatarSource = getAvatarSource();
 
   return (
     <SafeAreaView style={styles.container}>
