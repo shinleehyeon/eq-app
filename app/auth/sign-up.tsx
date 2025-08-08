@@ -193,7 +193,7 @@ export default function SignUpScreen() {
 
           <View style={styles.logoContainer}>
             <Image
-              source={require('@/assets/images/splash-icon.png')}
+              source={require('@/assets/images/logo.png')}
               style={styles.logo}
             />
           </View>
